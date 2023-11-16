@@ -1,4 +1,3 @@
-.idea/*
-.egg-info/*
-smoldyn_process.egg-info/
-
+.python-version
+*.egg-info
+*.idea

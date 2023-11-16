@@ -1,32 +1,35 @@
-import re
-from setuptools import setup, find_packages
+import os
+import glob
+import setuptools
+from distutils.core import setup
 
-
-VERSION = '0.0.1'
-
-
-with open("README.md", "r") as readme:
+with open("README.md", 'r') as readme:
     long_description = readme.read()
 
 setup(
-    name="smoldyn-process",
-    version=VERSION,
-    author="Alex Patrie/Eran Agmon",
-    author_email="apatrie@uchc.edu/agmon.eran@gmail.com",
-    description="",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/vivarium-collective/smoldyn-process",
-    packages=find_packages(),
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
+    name='smoldyn-process',
+    version='0.0.1',
+    packages=[
+        'smoldyn_process',
+        'smoldyn_process.processes',
+        'smoldyn_process.composites',
+        'smoldyn_process.experiments',
     ],
-    python_requires=">=3.6",
+    author='Eran Agmon, Steve Andrews, Ryan Spangler, Alex Patrie',
+    author_email='eagmon@stanford.edu, steven.s.andrews@gmail.com, ryan.spangler@gmail.com, apatrie@uchc.edu',
+    url='https://github.com/vivarium-collective/smoldyn-process',
+    license='MIT',
+    entry_points={
+        'console_scripts': []
+    },
+    short_description='A Process-bigraph wrapper for Smoldyn',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    package_data={},
+    include_package_data=True,
+    install_requires=[
+        'process-bigraph',
+        'biosimulators-simularium',
+        'smoldyn'
+    ],
 )
