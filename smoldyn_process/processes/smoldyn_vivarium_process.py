@@ -3,19 +3,13 @@
 Smoldyn
 =======
 
-Execute by running: ``python smoldyn_process/processes/smoldyn_process.py``
+Execute by running: ``python smoldyn_process/processes/smoldyn_vivarium_process.py``
 """
 
 import os
 
 import smoldyn as sm
-
-from vivarium.core.process import Process
-from vivarium.core.composition import (
-    simulate_process,
-    PROCESS_OUT_DIR,
-)
-from vivarium.plots.simulation_output import plot_simulation_output
+from process_bigraph import Process, Step, Composite, process_registry, types
 
 
 class Smoldyn(Process):
