@@ -7,10 +7,9 @@ import tellurium as te
 import numpy as np
 
 
-class TelluriumStep(Step):
+class SmoldynStep(Step):
     config_schema = {
-        'sbml_model_path': 'string',
-        'antimony_string': 'string',
+        'model_filepath': 'string',
     }
 
     def __init__(self, config=None):

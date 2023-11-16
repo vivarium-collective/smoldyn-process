@@ -35,7 +35,7 @@ class Smoldyn(Process):
         'species': {},
         'reactions': {},
         # TODO: add parameters for defining compartments and surfaces
-        'file': None,
+        'model_file': None,
     }
 
     def __init__(self, parameters=None):
@@ -45,7 +45,7 @@ class Smoldyn(Process):
 
         # initialize the simulation
         if self.parameters['file']:
-            self.simulation = sm.Simulation.fromFile(self.parameters['file'], "q")
+            self.simulation = sm.Simulation.fromFile(self.parameters['model_file'], "q")
         else:
             self.simulation = sm.Simulation(
                 low=self.parameters['low'],
