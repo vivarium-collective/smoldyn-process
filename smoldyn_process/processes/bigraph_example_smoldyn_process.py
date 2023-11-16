@@ -2,7 +2,7 @@
 Tellurium Process
 """
 from process_bigraph import Process, Step, Composite, process_registry, types
-from sed2 import pf
+from smoldyn_process.sed2 import pf
 import tellurium as te
 import numpy as np
 
