@@ -1,0 +1,3 @@
+setuptools
+smoldyn
+process-bigraph
