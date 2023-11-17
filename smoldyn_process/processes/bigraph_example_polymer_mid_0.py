@@ -6,26 +6,26 @@ Smoldyn
 Execute by running: ``python smoldyn_process/processes/smoldyn_vivarium_process.py``
 """
 
-import os
 
+import os
 import smoldyn as sm
 from process_bigraph import Process, Step, Composite, process_registry, types
 
 
-class Smoldyn(Process):
+class _SmoldynStep(Process):
     """ Smoldyn Process
 
-    A spatial stochastic simulator for chemical reaction networks
+        A spatial stochastic simulator for chemical reaction networks
 
-    http://www.smoldyn.org/index.html
+        http://www.smoldyn.org/index.html
 
-    TODO: suppress print out
-    TODO: configure surfaces
+        TODO: suppress print out
+        TODO: configure surfaces
     """
 
     defaults = {
         'animate': False,
-        'time_step': 10,
+        'time_stop': 10,
         'low': [0, 0],
         'high': [10, 10],
         'boundary': 'p',
@@ -53,8 +53,8 @@ class Smoldyn(Process):
             )
 
         # set output type
-        self.simulation.addOutputData('counts')
-        self.simulation.addCommand(cmd='molcount counts', cmd_type='E')
+        self.simulation.addOutputData('listmols')
+        self.simulation.addCommand(cmd=f'listmols', cmd_type='i')
 
         # get the species names
         species_count = self.simulation.count()['species']
@@ -205,12 +205,15 @@ def test_smoldyn_process(
     # declare the initial state
     initial_state = {
         'molecules': {
-            'X': 10}}
+            'X': 10
+        }
+    }
 
     # run the simulation
     sim_settings = {
         'total_time': 100,
-        'initial_state': initial_state}
+        'initial_state': initial_state
+    }
     output = simulate_process(
         process,
         sim_settings)
@@ -223,7 +226,7 @@ def test_load_file():
         'file': 'smoldyn_process/examples/template.txt'
     }
     smoldyn = Smoldyn(parameters)
-    
+
     # declare the initial state
     initial_state = {
         'molecules': {
@@ -239,9 +242,8 @@ def test_load_file():
         smoldyn,
         sim_settings)
 
-    import ipdb
+    import ipdb;
     ipdb.set_trace()
-
 
 
 if __name__ == '__main__':

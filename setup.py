@@ -30,6 +30,7 @@ setup(
     install_requires=[
         'process-bigraph',
         'biosimulators-simularium',
-        'smoldyn'
+        'smoldyn',
+        'jupyterlab'
     ],
 )

@@ -6,8 +6,8 @@ define FWDRATE	0.1
 define REVRATE	0.1
 
 # Graphical output
-graphics opengl
-graphic_iter 1000
+# graphics opengl
+# graphic_iter 1000
 
 # System space and time definitions
 dim 3
