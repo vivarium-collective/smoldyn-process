@@ -39,8 +39,14 @@ class SmoldynStep(Step):
             'species',
         ]
 
-        # Get the species (floating and boundary)
-        '''self.floating_species_list = self.simulator.getFloatingSpeciesIds()
+        # Get the species
+        self.species_list = [self.simulator.getSpeciesName(i) for i in range(counts.get('species'))]
+
+        # Get the boundaries
+        self.boundaries_list = self.simulator.getBoundaries()
+
+        '''# Get the species (floating and boundary)
+        self.floating_species_list = self.simulator.getFloatingSpeciesIds()
         self.boundary_species_list = self.simulator.getBoundarySpeciesIds()
         self.floating_species_initial = self.simulator.getFloatingSpeciesConcentrations()
         self.boundary_species_initial = self.simulator.getBoundarySpeciesConcentrations()
