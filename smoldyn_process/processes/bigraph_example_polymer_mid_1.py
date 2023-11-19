@@ -18,12 +18,16 @@ class SmoldynStep(Step):
     def __init__(self, config=None):
         super().__init__(config)
 
+        def initialize_simulator():
+            try:
+                return sm.Simulation.fromFile(self.config.get('model_filepath'))
+            except KeyError:
+                raise ValueError('The config requires a path to a Smoldyn model file.')
+
         # initialize the simulator from a Smoldyn model.txt file.
-        try:
-            self.simulator = sm.Simulation.fromFile(self.config.get('model_filepath'))
-            counts = self.simulator.count()
-        except KeyError:
-            raise ValueError('The config requires a path to a Smoldyn model file.')
+        self.simulator = initialize_simulator()
+        counts = self.simulator.count()
+
 
         '''self.input_ports = [
             'floating_species',
@@ -79,9 +83,13 @@ class SmoldynStep(Step):
         }
 
     def update(self, inputs):
-        results = self.simulator.simulate(inputs['time'], inputs['run_time'], 10)  # TODO -- adjust the number of saves teps
+        '''results = self.simulator.simulate(inputs['time'], inputs['run_time'], 10)  # TODO -- adjust the number of saves teps
         return {
-            'results': results}
+            'results': results}'''
+        results = self.simulator.runSim()
+        return {
+            'results': results
+        }
 
 
 class TelluriumProcess(Process):
