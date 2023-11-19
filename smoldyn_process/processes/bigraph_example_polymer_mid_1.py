@@ -3,6 +3,7 @@ Smoldyn Process
 """
 
 
+from typing import *
 import numpy as np
 import smoldyn as sm
 from process_bigraph import Process, Step, Composite, process_registry, types
@@ -18,14 +19,14 @@ class SmoldynStep(Step):
     def __init__(self, config=None):
         super().__init__(config)
 
-        def initialize_simulator():
+        def initialize_simulator(config) -> Union[sm.Simulation, None]:
             try:
-                return sm.Simulation.fromFile(self.config.get('model_filepath'))
+                return sm.Simulation.fromFile(config.get('model_filepath'))
             except KeyError:
                 raise ValueError('The config requires a path to a Smoldyn model file.')
 
         # initialize the simulator from a Smoldyn model.txt file.
-        self.simulator = initialize_simulator()
+        self.simulator = initialize_simulator(self.config)
         counts = self.simulator.count()
 
 
