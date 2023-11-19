@@ -42,6 +42,7 @@ class SmoldynStep(Step):
         # in the case of this particular model file, listmols is output and thus species should be counted.
         self.output_ports = [
             'species',
+            'mols'
         ]
 
         # Get the species
@@ -49,6 +50,11 @@ class SmoldynStep(Step):
 
         # Get the boundaries
         self.boundaries_list = self.simulator.getBoundaries()
+
+        # Get molecule counts
+        self.molecule_count = self.simulator.getMoleculeCount()
+        self.molecule_ports = self.simulator.getPortMolecules()
+
 
         '''# Get the species (floating and boundary)
         self.floating_species_list = self.simulator.getFloatingSpeciesIds()
