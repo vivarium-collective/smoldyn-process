@@ -18,7 +18,7 @@ time_start 0
 time_stop 500
 time_step 0.01
 
-define TIME_STOP 500
+define TIME_STOP 10
 
 # Molecular species and their properties
 species A
@@ -40,7 +40,7 @@ mol 20000 A u u u
 
 # Original commands:
 # output_files polymer_midout.txt stdout
-# output_format csv
+output_format csv
 # cmd N 1000 molcount polymer_midout.txt
 # cmd N 1000 molcount stdout
 # cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
@@ -52,6 +52,6 @@ cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
 cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
 # cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
 
-cmd A diagnostics all 
+cmd A diagnostics all
 
 end_file

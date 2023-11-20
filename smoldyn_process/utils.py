@@ -86,8 +86,19 @@ class SmoldynModel:
                     if isinstance(member, list):
                         return member
 
-    def _model_definitions(self) -> List[Tuple[str]]:
-        return self.query('define')
+    def _model_definitions(self):
+        """Return a dict following the Smoldyn standard for model definition nomenclature, i.e\n:
+            `define NAME VALUE`.
+        """
+        definitions = {}
+        defs = self.query('define')
+        for definition in defs:
+            if not len(definition) == 3:
+                raise AttributeError(f'the definition: {definition} is improperly formatted.')
+            name = definition[1]
+            value = definition[2]
+            print(name, value)
+        return definitions
 
     def query(self, value: str) -> List[Tuple[str]]:
         """Query `self.model_list` for a given value/set of values and return
@@ -104,6 +115,9 @@ class SmoldynModel:
         values = []
         for line in self.model_list:
             if line.startswith(value):
+                # for l in line.split():
+                    # if l in self.definitions:
+                        # l = self.definitions
                 values.append(tuple(line.split()))
         if not values:
             raise ValueError(f'{value} was not found in the model file.')
