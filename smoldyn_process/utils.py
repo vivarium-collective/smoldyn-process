@@ -65,3 +65,30 @@ def get_value_from_model_list(model_fp: str, value: str) -> List[Tuple[str]]:
         if line.startswith(value):
             values.append(tuple(line.split()))
     return values
+
+
+class SmoldynModel:
+    def __init__(self, fp: str):
+        self.fp = fp
+        self.model_list = self._set_model_as_list()
+
+    def _set_model_as_list(self) -> List[str]:
+        """Get a Smoldyn model file in the form of a list of strings delimited by line break.
+
+            Returns:
+                `List[str]` : model file as list
+        """
+        sim_spec = validate_model(self.fp)
+        for item in sim_spec:
+            if isinstance(item, tuple):
+                for member in item:
+                    if isinstance(member, list):
+                        return member
+
+    def get_value(self, value: str) -> List[Tuple[str]]:
+        model_as_list = get_model_as_list(self.fp)
+        values = []
+        for line in model_as_list:
+            if line.startswith(value):
+                values.append(tuple(line.split()))
+        return values
