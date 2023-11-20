@@ -92,7 +92,7 @@ class SmoldynModel:
     def query(self, value: str) -> List[Tuple[str]]:
         """Query `self.model_list` for a given value/set of values and return
             a list of single-space delimited tuples of queried values. Raises a `ValueError`
-            if the value is not found as a term in `self.model_list`.
+            if the value is not found as a term in `self.model_list`. TODO: filter out comments.
 
             Args:
                 value:`str`: value by which to query the document.
@@ -103,8 +103,9 @@ class SmoldynModel:
         """
         values = []
         for line in self.model_list:
-            if value not in line:
-                raise ValueError(f'{value} is not a searchable parameter.')
             if line.startswith(value):
                 values.append(tuple(line.split()))
-        return values
+        if not values:
+            raise ValueError(f'{value} was not found in the model file.')
+        else:
+            return values

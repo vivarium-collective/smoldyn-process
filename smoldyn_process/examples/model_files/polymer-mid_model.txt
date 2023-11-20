@@ -52,6 +52,6 @@ cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
 cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
 # cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
 
-cmd A diagnostics all
+cmd A diagnostics all 
 
 end_file
