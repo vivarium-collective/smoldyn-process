@@ -70,8 +70,15 @@ def get_value_from_model_list(model_fp: str, value: str) -> List[Tuple[str]]:
 class SmoldynModel:
     def __init__(self, fp: str):
         self.fp = fp
-        self.model_list = self._model_as_list()
+        self.validation = self._validate_model()
+        self.list_model = self._model_as_list()
         self.definitions = self._model_definitions()
+        self.simulation = self._simulation()
+        self.counts = self._counts()
+        self.dt = self._dt()
+
+    def _validate_model(self):
+        return validate_model(self.fp)
 
     def _model_as_list(self) -> List[str]:
         """Get a Smoldyn model file in the form of a list of strings delimited by line break.
@@ -79,8 +86,7 @@ class SmoldynModel:
             Returns:
                 `List[str]` : model file as list
         """
-        sim_spec = validate_model(self.fp)
-        for item in sim_spec:
+        for item in self.validation:
             if isinstance(item, tuple):
                 for member in item:
                     if isinstance(member, list):
@@ -100,9 +106,22 @@ class SmoldynModel:
             definitions[name] = float(value)
         return definitions
 
+    def _simulation(self):
+        for item in self.validation:
+            if isinstance(item, tuple):
+                for member in item:
+                    if isinstance(member, sm.Simulation):
+                        return member
+
+    def _counts(self):
+        return self.simulation.count()
+
+    def _dt(self):
+        return self.simulation.dt
+
     def _query(self, value: str) -> List[Tuple[str]]:
         values = []
-        for line in self.model_list:
+        for line in self.list_model:
             if line.startswith(value):
                 values.append(tuple(line.split()))
         if not values:
@@ -113,7 +132,7 @@ class SmoldynModel:
     def query(self, value: str) -> List[Tuple[str]]:
         """Query `self.model_list` for a given value/set of values and return
             a list of single-space delimited tuples of queried values. Raises a `ValueError`
-            if the value is not found as a term in `self.model_list`.
+            if the value is not found as a term in `self.list_model`.
 
             TODO: filter out comments and replace any definitions with the actual value.
 
@@ -124,4 +143,7 @@ class SmoldynModel:
                 `List[Tuple[str]]`
         """
         return self._query(value)
+
+    def execute_simulation(self):
+        return self.simulation.r
 
