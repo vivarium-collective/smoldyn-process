@@ -19,15 +19,14 @@ class SmoldynStep(Step):
     def __init__(self, config=None):
         super().__init__(config)
 
-        def initialize_simulator(config) -> Union[sm.Simulation, None]:
-            try:
-                return sm.Simulation.fromFile(config.get('model_filepath'))
-            except KeyError:
-                raise ValueError('The config requires a path to a Smoldyn model file.')
-
         # initialize the simulator from a Smoldyn model.txt file.
-        self.simulator = initialize_simulator(self.config)
-        counts = self.simulator.count()
+        if not config.get('model_filepath'):
+            raise ValueError('The config requires a path to a Smoldyn model file.')
+        else:
+            self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath'])
+
+        # get the simulation counts
+        counts: Dict[str, int] = self.simulator.count()
 
 
         '''self.input_ports = [
