@@ -70,9 +70,10 @@ def get_value_from_model_list(model_fp: str, value: str) -> List[Tuple[str]]:
 class SmoldynModel:
     def __init__(self, fp: str):
         self.fp = fp
-        self.model_list = self._set_model_as_list()
+        self.model_list = self._model_as_list()
+        # self.definitions = self._modeL_definitions()
 
-    def _set_model_as_list(self) -> List[str]:
+    def _model_as_list(self) -> List[str]:
         """Get a Smoldyn model file in the form of a list of strings delimited by line break.
 
             Returns:
@@ -85,10 +86,12 @@ class SmoldynModel:
                     if isinstance(member, list):
                         return member
 
+    def _modeL_definitions(self) -> List[Tuple[str]]:
+        return self.get_value('define')
+
     def get_value(self, value: str) -> List[Tuple[str]]:
-        model_as_list = get_model_as_list(self.fp)
         values = []
-        for line in model_as_list:
+        for line in self.model_list:
             if line.startswith(value):
                 values.append(tuple(line.split()))
             else:
