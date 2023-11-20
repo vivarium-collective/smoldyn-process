@@ -71,7 +71,7 @@ class SmoldynModel:
     def __init__(self, fp: str):
         self.fp = fp
         self.model_list = self._model_as_list()
-        # self.definitions = self._modeL_definitions()
+        self.definitions = self._model_definitions()
 
     def _model_as_list(self) -> List[str]:
         """Get a Smoldyn model file in the form of a list of strings delimited by line break.
@@ -86,7 +86,7 @@ class SmoldynModel:
                     if isinstance(member, list):
                         return member
 
-    def _modeL_definitions(self) -> List[Tuple[str]]:
+    def _model_definitions(self) -> List[Tuple[str]]:
         return self.query('define')
 
     def query(self, value: str) -> List[Tuple[str]]:
@@ -103,8 +103,8 @@ class SmoldynModel:
         """
         values = []
         for line in self.model_list:
+            if value not in line:
+                raise ValueError(f'{value} is not a searchable parameter.')
             if line.startswith(value):
                 values.append(tuple(line.split()))
-            else:
-                raise ValueError(f'{value} is not a searchable parameter.')
         return values
