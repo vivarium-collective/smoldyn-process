@@ -86,40 +86,42 @@ class SmoldynModel:
                     if isinstance(member, list):
                         return member
 
-    def _model_definitions(self):
+    def _model_definitions(self) -> Dict[str, float]:
         """Return a dict following the Smoldyn standard for model definition nomenclature, i.e\n:
             `define NAME VALUE`.
         """
         definitions = {}
-        defs = self.query('define')
+        defs = self._query('define')
         for definition in defs:
             if not len(definition) == 3:
                 raise AttributeError(f'the definition: {definition} is improperly formatted.')
             name = definition[1]
             value = definition[2]
-            print(name, value)
+            definitions[name] = float(value)
         return definitions
+
+    def _query(self, value: str) -> List[Tuple[str]]:
+        values = []
+        for line in self.model_list:
+            if line.startswith(value):
+                values.append(tuple(line.split()))
+        if not values:
+            raise ValueError(f'{value} was not found in the model file.')
+        else:
+            return values
 
     def query(self, value: str) -> List[Tuple[str]]:
         """Query `self.model_list` for a given value/set of values and return
             a list of single-space delimited tuples of queried values. Raises a `ValueError`
-            if the value is not found as a term in `self.model_list`. TODO: filter out comments.
+            if the value is not found as a term in `self.model_list`.
+
+            TODO: filter out comments and replace any definitions with the actual value.
 
             Args:
                 value:`str`: value by which to query the document.
 
             Returns:
                 `List[Tuple[str]]`
-
         """
-        values = []
-        for line in self.model_list:
-            if line.startswith(value):
-                # for l in line.split():
-                    # if l in self.definitions:
-                        # l = self.definitions
-                values.append(tuple(line.split()))
-        if not values:
-            raise ValueError(f'{value} was not found in the model file.')
-        else:
-            return values
+        return self._query(value)
+
