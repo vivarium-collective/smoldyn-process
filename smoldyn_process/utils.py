@@ -56,3 +56,12 @@ def get_model_as_list(model_fp: str) -> List[str]:
             for member in item:
                 if isinstance(member, list):
                     return member
+
+
+def get_value_from_model_list(model_fp: str, value: str) -> List[Tuple[str]]:
+    model_as_list = get_model_as_list(model_fp)
+    values = []
+    for line in model_as_list:
+        if line.startswith(value):
+            values.append(tuple(line.split()))
+    return values
