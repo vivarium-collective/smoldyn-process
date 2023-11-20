@@ -1,6 +1,7 @@
 import os
 from typing import *
 import smoldyn as sm
+from biosimulators_simularium.converters.utils import validate_model
 
 
 def get_smoldyn_model_from_file(model_fp: str) -> sm.Simulation:
@@ -39,3 +40,19 @@ def get_species_from_model_file(model_fp: str) -> List[str]:
     sim = get_smoldyn_model_from_file(model_fp)
     return get_species(sim)
 
+
+def get_model_as_list(model_fp: str) -> List[str]:
+    """Get a Smoldyn model file in the form of a list of strings delimited by line break.
+
+        Args:
+            model_fp:`str`
+
+        Returns:
+            `List[str]` : model file as list
+    """
+    sim_spec = validate_model(model_fp)
+    for item in sim_spec:
+        if isinstance(item, tuple):
+            for member in item:
+                if isinstance(member, list):
+                    return member
