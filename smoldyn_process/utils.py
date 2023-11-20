@@ -91,4 +91,6 @@ class SmoldynModel:
         for line in model_as_list:
             if line.startswith(value):
                 values.append(tuple(line.split()))
+            else:
+                raise ValueError(f'{value} is not a searchable parameter.')
         return values
