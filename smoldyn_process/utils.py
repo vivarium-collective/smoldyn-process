@@ -87,9 +87,20 @@ class SmoldynModel:
                         return member
 
     def _modeL_definitions(self) -> List[Tuple[str]]:
-        return self.get_value('define')
+        return self.query('define')
 
-    def get_value(self, value: str) -> List[Tuple[str]]:
+    def query(self, value: str) -> List[Tuple[str]]:
+        """Query `self.model_list` for a given value/set of values and return
+            a list of single-space delimited tuples of queried values. Raises a `ValueError`
+            if the value is not found as a term in `self.model_list`.
+
+            Args:
+                value:`str`: value by which to query the document.
+
+            Returns:
+                `List[Tuple[str]]`
+
+        """
         values = []
         for line in self.model_list:
             if line.startswith(value):
