@@ -144,8 +144,7 @@ def get_reactions(model_fp: str):
             reaction_spec['subs'].append(subs)
             reaction_spec['prds'].append(prds)
             _reactions[reaction_name] = reaction_spec
-    return reactions_spec
-
+    return _reactions
 
 
 class ProcessModel(ABC):
