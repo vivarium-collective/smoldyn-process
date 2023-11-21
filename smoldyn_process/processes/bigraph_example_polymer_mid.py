@@ -12,6 +12,8 @@ from smoldyn_process.utils import SmoldynModel
 
 
 class SmoldynProcess(Step):
+    """Smoldyn bi-graph process."""
+
     config_schema = {
         'model_filepath': 'string',
     }
@@ -26,16 +28,13 @@ class SmoldynProcess(Step):
         # create an instance of SmoldynModel
         model = SmoldynModel(self.config.get('model_filepath'))
 
-        #self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath'])
+        # specify the process simulator
         self.simulator: sm.Simulation = model.simulation
+        # self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath']) ???
 
         # get input ports as above
-        # self.input_ports = list(model.counts.keys())
-
-        self.input_ports = [
-            'species',
-            'model_parameters'
-        ]
+        self.input_ports: List[str] = ['species', 'model_parameters']
+        # self.input_ports = list(model.counts.keys()) ???
 
         # in the case of this particular model file, listmols is output and thus species should be counted.
         self.output_ports = [
@@ -43,16 +42,19 @@ class SmoldynProcess(Step):
         ]
 
         # Get the species
-        self.species_list = [self.simulator.getSpeciesName(i) for i in range(model.counts.get('species'))]
+        self.species_list: List[str] = [
+            self.simulator.getSpeciesName(i) for i in range(model.counts.get('species'))
+        ]
 
         # Get boundaries for uniform
-        self.boundaries = self.simulator.getBoundaries()
+        self.boundaries: Tuple[List[float], List[float]] = self.simulator.getBoundaries()
 
         # Get model parameters
-        self.model_parameters_dict = model.definitions
+        self.model_parameters_dict: Dict[str, int] = model.definitions
+        self.model_parameters_list: List[str] = list(self.model_parameters_dict.keys())
 
         # Get a list of reactions
-        self.reaction_list = model.query('reaction')
+        self.reaction_list: List[Tuple[str]] = model.query('reaction')
 
 
     # TODO -- is initial state even working for steps?
@@ -83,7 +85,7 @@ class SmoldynProcess(Step):
             'model_parameters': self.model_parameters_dict
         }
 
-    def schema(self):
+    '''def schema(self):
         return {
             'inputs': {
                 'time': 'float',
@@ -93,13 +95,52 @@ class SmoldynProcess(Step):
             'outputs': {
                 'results': {'_type': 'numpy_array', '_apply': 'set'}  # TODO: update Smoldyn-specific return type
             }
+        }'''
+
+    def schema(self):
+        float_set = {'_type': 'float', '_apply': 'set'}
+        string_set = float_set = {'_type': 'string', '_apply': 'set'}
+        return {
+            'time': 'float',
+            'species': {
+                species_id: float_set for species_id in self.species_list
+            },
+            'boundaries': {
+                species_id: float_set for species_id in self.boundaries
+            },
+            'model_parameters': {
+                param_id: float_set for param_id in self.model_parameters_list
+            },
+            'reactions': {
+                reaction_id: string_set for reaction_id in self.reaction_list
+            },
         }
 
-    def update(self, inputs):
+    '''def update(self, inputs):
         results = self.simulator.run(inputs['time_stop'], inputs['dt'])
         return {
             'results': results
-        }
+        }'''
+
+    def update(self, state, interval):
+
+        # set tellurium values according to what is passed in states
+        for port_id, values in state.items():
+            if port_id in self.input_ports:  # only update from input ports
+                for cat_id, value in values.items():
+                    self.simulator.setValue(cat_id, value)
+
+        # run the simulation
+        new_time = self.simulator.oneStep(state['time'], interval)
+
+        # extract the results and convert to update
+        update = {'time': new_time}
+        for port_id, values in state.items():
+            if port_id in self.output_ports:
+                update[port_id] = {}
+                for cat_id in values.keys():
+                    update[port_id][cat_id] = self.simulator.getValue(cat_id)
+        return update
 
 
 '''
@@ -196,18 +237,18 @@ class TelluriumProcess(Process):
 '''
 
 
-process_registry.register('tellurium_step', SmoldynProcess)
+process_registry.register('smoldyn_process', SmoldynProcess)
 
 
 def test_process():
 
     # this is the instance for the composite process to run
     instance = {
-        'tellurium': {
+        'smoldyn': {
             '_type': 'process',
-            'address': 'local:tellurium_process',  # using a local toy process
+            'address': 'local:smoldyn_process',  # using a local toy process
             'config': {
-                'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+                'model_filepath': 'examples/model_files/polymer-mid_model.txt',
             },
             'wires': {
                 'time': ['time_store'],
