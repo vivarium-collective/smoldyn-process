@@ -123,7 +123,7 @@ class SmoldynProcess(Step):
         }'''
 
     def update(self, state, interval):
-
+        # HERE IS WHERE Simulation.updateSim() should go!!!!!
         # set tellurium values according to what is passed in states
         for port_id, values in state.items():
             if port_id in self.input_ports:  # only update from input ports
