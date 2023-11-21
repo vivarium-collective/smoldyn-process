@@ -11,7 +11,7 @@ from smoldyn_process.sed2 import pf
 from smoldyn_process.utils import SmoldynModel
 
 
-class SmoldynStep(Step):
+class SmoldynProcess(Step):
     config_schema = {
         'model_filepath': 'string',
     }
@@ -29,14 +29,13 @@ class SmoldynStep(Step):
         #self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath'])
         self.simulator: sm.Simulation = model.simulation
 
-        '''self.input_ports = [
-            'floating_species',
-            'boundary_species',
-            'model_parameters'
-        ]'''
-
         # get input ports as above
-        self.input_ports = list(model.counts.keys())
+        # self.input_ports = list(model.counts.keys())
+
+        self.input_ports = [
+            'species',
+            'model_parameters'
+        ]
 
         # in the case of this particular model file, listmols is output and thus species should be counted.
         self.output_ports = [
@@ -46,34 +45,28 @@ class SmoldynStep(Step):
         # Get the species
         self.species_list = [self.simulator.getSpeciesName(i) for i in range(model.counts.get('species'))]
 
-        # Get the boundaries
-        self.boundaries_list = self.simulator.getBoundaries()
+        # Get boundaries for uniform
+        boundaries = self.simulator.getBoundaries()
+        i = len(boundaries)
+        self.boundaries_dict = {
+            'low': boundaries[i - 1],
+            'high': boundaries[i]
+        }
 
-        # Get molecule counts
-        self.molecule_count = self.simulator.getMoleculeCount()
-        self.molecule_ports = self.simulator.getPortMolecules()
-
-
-        '''# Get the species (floating and boundary)
-        self.floating_species_list = self.simulator.getFloatingSpeciesIds()
-        self.boundary_species_list = self.simulator.getBoundarySpeciesIds()
-        self.floating_species_initial = self.simulator.getFloatingSpeciesConcentrations()
-        self.boundary_species_initial = self.simulator.getBoundarySpeciesConcentrations()
-
-        # Get the list of parameters and their values
-        self.model_parameters_list = self.simulator.getGlobalParameterIds()
-        self.model_parameter_values = self.simulator.getGlobalParameterValues()
+        # Get model parameters
+        self.model_parameters_dict = model.definitions
 
         # Get a list of reactions
-        self.reaction_list = self.simulator.getReactionIds()'''
+        self.reaction_list = model.query('reaction')
 
 
     # TODO -- is initial state even working for steps?
     def initial_state(self, config=None):
         return {
-            'inputs': {
-                'time': 0,
-            },
+            'time': 0.0,
+            'species': self.species_list,
+            'boundaries': self.boundaries_dict,
+            'model_parameters': self.model_parameters_dict
         }
 
     def schema(self):
@@ -84,21 +77,18 @@ class SmoldynStep(Step):
                 'dt': 'float'
             },
             'outputs': {
-                'results': {'_type': 'numpy_array', '_apply': 'set'}  # This is a roadrunner._roadrunner.NamedArray
+                'results': {'_type': 'numpy_array', '_apply': 'set'}  # TODO: update Smoldyn-specific return type
             }
         }
 
     def update(self, inputs):
-        '''results = self.simulator.simulate(inputs['time'], inputs['run_time'], 10)  # TODO -- adjust the number of saves teps
-        return {
-            'results': results}'''
         results = self.simulator.run(inputs['time_stop'], inputs['dt'])
         return {
             'results': results
         }
 
 
-class SmoldynProcess(Process):
+class TelluriumProcess(Process):
     config_schema = {
         'model_filepath': 'string',
         'record_history': 'bool',  # TODO -- do we have this type?

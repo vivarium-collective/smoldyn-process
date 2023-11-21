@@ -71,7 +71,6 @@ class SmoldynModel:
     def __init__(self, fp: str):
         self.fp = fp
         self.validation = self._validate_model()
-        self.list_model = self._model_as_list()
         self.definitions = self._model_definitions()
         self.simulation = self._simulation()
         self.counts = self._counts()
@@ -80,18 +79,6 @@ class SmoldynModel:
     def _validate_model(self):
         return validate_model(self.fp)
 
-    def _model_as_list(self) -> List[str]:
-        """Get a Smoldyn model file in the form of a list of strings delimited by line break.
-
-            Returns:
-                `List[str]` : model file as list
-        """
-        for item in self.validation:
-            if isinstance(item, tuple):
-                for member in item:
-                    if isinstance(member, list):
-                        return member
-
     def _model_definitions(self) -> Dict[str, float]:
         """Return a dict following the Smoldyn standard for model definition nomenclature, i.e\n:
             `define NAME VALUE`.
@@ -99,7 +86,7 @@ class SmoldynModel:
         definitions = {}
         defs = self._query('define')
         for definition in defs:
-            if not len(definition) == 3:
+            if not len(definition) >= 3:
                 raise AttributeError(f'the definition: {definition} is improperly formatted.')
             name = definition[1]
             value = definition[2]
@@ -121,7 +108,7 @@ class SmoldynModel:
 
     def _query(self, value: str) -> List[Tuple[str]]:
         values = []
-        for line in self.list_model:
+        for line in self.list_model():
             if line.startswith(value):
                 values.append(tuple(line.split()))
         if not values:
@@ -144,6 +131,18 @@ class SmoldynModel:
         """
         return self._query(value)
 
+    def list_model(self) -> List[str]:
+        """Get a Smoldyn model file in the form of a list of strings delimited by line break.
+
+            Returns:
+                `List[str]` : model file as list
+        """
+        for item in self.validation:
+            if isinstance(item, tuple):
+                for member in item:
+                    if isinstance(member, list):
+                        return member
+
     def execute_simulation(self):
-        return self.simulation.r
+        return self.simulation.run(self.simulation.stop, self.simulation.dt)
 
