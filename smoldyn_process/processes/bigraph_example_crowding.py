@@ -61,28 +61,17 @@ class SmoldynProcess(Process):
         """NOTE: Due to the nature of this model, Smoldyn assigns a random uniform distribution of
             integers as the initial coordinate (x, y, z) values for the simulation.
 
+
             Args:
                 config:`Dict`: configuration by which to read the relevant values at initialization
                     of simulation. Defaults to `None`.
         """
         # create species dict of coordinates and initialize to None
-        species_dict = {}
-        for spec in self.species_list:
-            species_dict[spec] = None
 
-        # create boundaries dict, accounting for each agent:
-        n_boundaries = len(self.boundaries) - 1
-        boundaries_dict = {
-            'low': [self.boundaries[n_boundaries - 1] for spec in self.species_list],
-            'high': [self.boundaries[n_boundaries] for spec in self.species_list]
-        }
-
-        return {
-            'time': 0.0,
-            'species': species_dict,
-            'boundaries': boundaries_dict,
-            'model_parameters': self.model_parameters_dict
-        }
+        state = {'molecules': {}}
+        for molecule in self.species:
+            self.set_uniform(molecule, config)
+        return state
 
     def set_uniform(self, name, config):
         self.simulation.runCommand(f'killmol {name}')
@@ -91,25 +80,6 @@ class SmoldynProcess(Process):
             config.get('counts'),
             highpos=config.get('high'),
             lowpos=config.get('low'))
-
-    '''def schema(self):
-        float_set = {'_type': 'float', '_apply': 'set'}
-        string_set = float_set = {'_type': 'string', '_apply': 'set'}
-        return {
-            'time': 'float',
-            'species': {
-                species_id: float_set for species_id in self.species_list
-            },
-            'boundaries': {
-                species_id: float_set for species_id in self.boundaries
-            },
-            'model_parameters': {
-                param_id: float_set for param_id in self.model_parameters_list
-            },
-            'reactions': {
-                reaction_id: string_set for reaction_id in self.reaction_list
-            },
-        }'''
 
     def schema(self):
         tuple_type = {'_type': 'tuple', '_apply': 'set'}
@@ -124,24 +94,19 @@ class SmoldynProcess(Process):
         }
 
     def update(self, state, interval):
-        # HERE IS WHERE Simulation.updateSim() should go!!!!!
-        # set tellurium values according to what is passed in states
-        for port_id, values in state.items():
-            if port_id in self.input_ports:  # only update from input ports
-                for cat_id, value in values.items():
-                    self.simulation.setValue(cat_id, value)
+        ##UPDATE FOR SMOLDYN!
+        # set reaction bounds
+        reaction_bounds = state['reaction_bounds']
+        for reaction_id, bounds in reaction_bounds.items():
+            self.model.reactions.get_by_id(reaction_id).bounds = (bounds['lower_bound'], bounds['upper_bound'])
 
-        # run the simulation
-        new_time = self.simulation.oneStep(state['time'], interval)
+        # run solver
+        solution = self.model.optimize()
 
-        # extract the results and convert to update
-        update = {'time': new_time}
-        for port_id, values in state.items():
-            if port_id in self.output_ports:
-                update[port_id] = {}
-                for cat_id in values.keys():
-                    update[port_id][cat_id] = self.simulation.getValue(cat_id)
-        return update
+        return {
+            'fluxes': solution.fluxes.to_dict(),
+            'objective_value': solution.objective_value
+        }
 
 
 # register the smoldyn process
