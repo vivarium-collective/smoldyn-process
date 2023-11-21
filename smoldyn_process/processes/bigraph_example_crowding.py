@@ -6,19 +6,20 @@ Smoldyn Process using the model found at `../examples/model_files/crowding_model
 from typing import *
 import numpy as np
 import smoldyn as sm
-from process_bigraph import Process, Step, Composite, process_registry, types
+from process_bigraph import Process, Composite, process_registry, types
 from smoldyn_process.sed2 import pf
 from smoldyn_process.utils import query_model, model_definitions, list_model
 
 
-class SmoldynProcess(Step):
-    """Smoldyn bi-graph process."""
+class SmoldynProcess(Process):
+    """Smoldyn-based implementation of bi-graph process' `Process` API."""
 
     config_schema = {
         'model_filepath': 'string',
+        'animate': 'boolean'
     }
 
-    def __init__(self, config=None):
+    def __init__(self, config: Dict = None):
         super().__init__(config)
 
         # specify the model fp for clarity
@@ -48,6 +49,13 @@ class SmoldynProcess(Step):
             species_name = self.simulation.getSpeciesName(index)
             self.species.append(species_name)
 
+        # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
+        # TODO: add a verification method to ensure that the boundaries do not change on the next step
+        self.boundaries = self.simulation.getBoundaries()
+
+        # set graphics (defaults to False)
+        if self.config['animate']:
+            self.simulation.addGraphics('opengl')
 
     def initial_state(self, config: Union[Dict, None] = None):
         """NOTE: Due to the nature of this model, Smoldyn assigns a random uniform distribution of
@@ -75,6 +83,14 @@ class SmoldynProcess(Step):
             'boundaries': boundaries_dict,
             'model_parameters': self.model_parameters_dict
         }
+
+    def set_uniform(self, name, config):
+        self.simulation.runCommand(f'killmol {name}')
+        self.simulation.addSolutionMolecules(
+            name,
+            config.get('counts'),
+            highpos=config.get('high'),
+            lowpos=config.get('low'))
 
     def schema(self):
         float_set = {'_type': 'float', '_apply': 'set'}
