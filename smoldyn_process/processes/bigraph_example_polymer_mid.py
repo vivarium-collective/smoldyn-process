@@ -102,6 +102,7 @@ class SmoldynProcess(Step):
         }
 
 
+'''
 class TelluriumProcess(Process):
     config_schema = {
         'model_filepath': 'string',
@@ -192,11 +193,10 @@ class TelluriumProcess(Process):
                 for cat_id in values.keys():
                     update[port_id][cat_id] = self.simulator.getValue(cat_id)
         return update
+'''
 
 
-
-process_registry.register('tellurium_step', TelluriumStep)
-process_registry.register('tellurium_process', TelluriumProcess)
+process_registry.register('tellurium_step', SmoldynProcess)
 
 
 def test_process():
