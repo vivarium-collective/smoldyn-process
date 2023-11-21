@@ -8,7 +8,7 @@ import numpy as np
 import smoldyn as sm
 from process_bigraph import Process, Step, Composite, process_registry, types
 from smoldyn_process.sed2 import pf
-from smoldyn_process.utils import get_species_from_model_file
+from smoldyn_process.utils import SmoldynModel
 
 
 class SmoldynStep(Step):
@@ -20,14 +20,14 @@ class SmoldynStep(Step):
         super().__init__(config)
 
         # initialize the simulator from a Smoldyn model.txt file.
-        if not config.get('model_filepath'):
+        if not self.config.get('model_filepath'):
             raise ValueError('The config requires a path to a Smoldyn model file.')
-        else:
-            self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath'])
 
-        # get the simulation counts
-        counts: Dict[str, int] = self.simulator.count()
+        # create an instance of SmoldynModel
+        model = SmoldynModel(self.config.get('model_filepath'))
 
+        #self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath'])
+        self.simulator: sm.Simulation = model.simulation
 
         '''self.input_ports = [
             'floating_species',
@@ -36,16 +36,15 @@ class SmoldynStep(Step):
         ]'''
 
         # get input ports as above
-        self.input_ports = list(counts.keys())
+        self.input_ports = list(model.counts.keys())
 
         # in the case of this particular model file, listmols is output and thus species should be counted.
         self.output_ports = [
-            'species',
-            'mols'
+            'species'
         ]
 
         # Get the species
-        self.species_list = [self.simulator.getSpeciesName(i) for i in range(counts.get('species'))]
+        self.species_list = [self.simulator.getSpeciesName(i) for i in range(model.counts.get('species'))]
 
         # Get the boundaries
         self.boundaries_list = self.simulator.getBoundaries()
@@ -81,7 +80,8 @@ class SmoldynStep(Step):
         return {
             'inputs': {
                 'time': 'float',
-                'run_time': 'float',
+                'time_stop': 'float',
+                'dt': 'float'
             },
             'outputs': {
                 'results': {'_type': 'numpy_array', '_apply': 'set'}  # This is a roadrunner._roadrunner.NamedArray
@@ -92,16 +92,15 @@ class SmoldynStep(Step):
         '''results = self.simulator.simulate(inputs['time'], inputs['run_time'], 10)  # TODO -- adjust the number of saves teps
         return {
             'results': results}'''
-        results = self.simulator.runSim()
+        results = self.simulator.run(inputs['time_stop'], inputs['dt'])
         return {
             'results': results
         }
 
 
-class TelluriumProcess(Process):
+class SmoldynProcess(Process):
     config_schema = {
-        'sbml_model_path': 'string',
-        'antimony_string': 'string',
+        'model_filepath': 'string',
         'record_history': 'bool',  # TODO -- do we have this type?
     }
 
