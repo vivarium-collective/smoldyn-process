@@ -1,5 +1,5 @@
 """
-Smoldyn Process
+Smoldyn Process using the model found at `../examples/model_files/crowding_model.txt`
 """
 
 
@@ -26,10 +26,11 @@ class SmoldynProcess(Step):
             raise ValueError('The config requires a path to a Smoldyn model file.')
 
         # create an instance of SmoldynModel
+        # TODO: Would it be helpful to create a generic Model object since everything is from file in the API?
         model = SmoldynModel(self.config.get('model_filepath'))
 
         # specify the process simulator
-        self.simulator: sm.Simulation = model.simulation
+        self.simulation: sm.Simulation = model.simulation
         # self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath']) ???
 
         # get input ports as above
@@ -43,19 +44,18 @@ class SmoldynProcess(Step):
 
         # Get the species
         self.species_list: List[str] = [
-            self.simulator.getSpeciesName(i) for i in range(model.counts.get('species'))
+            self.simulation.getSpeciesName(i) for i in range(model.counts.get('species'))
         ]
 
         # Get boundaries for uniform
-        self.boundaries: Tuple[List[float], List[float]] = self.simulator.getBoundaries()
+        self.boundaries: Tuple[List[float], List[float]] = self.simulation.getBoundaries()
 
         # Get model parameters
         self.model_parameters_dict: Dict[str, int] = model.definitions
         self.model_parameters_list: List[str] = list(self.model_parameters_dict.keys())
 
         # Get a list of reactions
-        self.reaction_list: List[Tuple[str]] = model.query('reaction')
-
+        self.reaction_list: List[Tuple[str]] = model.query('reaction', stringify=True)
 
     # TODO -- is initial state even working for steps?
     def initial_state(self, config: Union[Dict, None] = None):
@@ -128,10 +128,10 @@ class SmoldynProcess(Step):
         for port_id, values in state.items():
             if port_id in self.input_ports:  # only update from input ports
                 for cat_id, value in values.items():
-                    self.simulator.setValue(cat_id, value)
+                    self.simulation.setValue(cat_id, value)
 
         # run the simulation
-        new_time = self.simulator.oneStep(state['time'], interval)
+        new_time = self.simulation.oneStep(state['time'], interval)
 
         # extract the results and convert to update
         update = {'time': new_time}
@@ -139,5 +139,111 @@ class SmoldynProcess(Step):
             if port_id in self.output_ports:
                 update[port_id] = {}
                 for cat_id in values.keys():
-                    update[port_id][cat_id] = self.simulator.getValue(cat_id)
+                    update[port_id][cat_id] = self.simulation.getValue(cat_id)
         return update
+
+
+# register the smoldyn process
+process_registry.register('smoldyn_process', SmoldynProcess)
+
+
+def test_process():
+    # this is the instance for the composite process to run
+    instance = {
+        'tellurium': {
+            '_type': 'process',
+            'address': 'local:tellurium_process',  # using a local toy process
+            'config': {
+                'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+            },
+            'wires': {
+                'time': ['time_store'],
+                'floating_species': ['floating_species_store'],
+                'boundary_species': ['boundary_species_store'],
+                'model_parameters': ['model_parameters_store'],
+                'reactions': ['reactions_store'],
+            }
+        },
+        'emitter': {
+            '_type': 'step',
+            'address': 'local:ram-emitter',
+            'config': {
+                'ports': {
+                    'inputs': {
+                        'floating_species': 'tree[float]'
+                    }
+                }
+            },
+            'wires': {
+                'inputs': {
+                    'floating_species': ['floating_species_store'],
+                }
+            }
+        }
+    }
+
+    # make the composite
+    workflow = Composite({
+        'state': instance
+    })
+
+    # initial_state = workflow.initial_state()
+
+    # run
+    workflow.run(10)
+
+    # gather results
+    results = workflow.gather_results()
+    print(f'RESULTS: {pf(results)}')
+
+
+def test_step():
+
+    # this is the instance for the composite process to run
+    instance = {
+        'start_time_store': 0,
+        'run_time_store': 1,
+        'results_store': None,  # TODO -- why is this not automatically added into the schema because of tellurium schema?
+        'tellurium': {
+            '_type': 'step',
+            'address': 'local:tellurium_step',  # using a local toy process
+            'config': {
+                'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+            },
+            'wires': {
+                'inputs': {
+                    'time': ['start_time_store'],
+                    'run_time': ['run_time_store'],
+                    'floating_species': ['floating_species_store'],
+                    'boundary_species': ['boundary_species_store'],
+                    'model_parameters': ['model_parameters_store'],
+                    'reactions': ['reactions_store'],
+                },
+                'outputs': {
+                    'results': ['results_store'],
+                }
+            }
+        }
+    }
+
+    # make the composite
+    workflow = Composite({
+        'state': instance
+    })
+
+    # initial_state = workflow.initial_state()
+
+    # run
+    update = workflow.run(10)
+
+    print(f'UPDATE: {update}')
+
+    # gather results
+    # results = workflow.gather_results()
+    # print(f'RESULTS: {pf(results)}')
+
+
+
+if __name__ == '__main__':
+    # test_process()
+    test_step()
