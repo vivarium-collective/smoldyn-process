@@ -8,7 +8,7 @@ import numpy as np
 import smoldyn as sm
 from process_bigraph import Process, Step, Composite, process_registry, types
 from smoldyn_process.sed2 import pf
-from smoldyn_process.utils import query_model, model_definitions
+from smoldyn_process.utils import query_model, model_definitions, list_model
 
 
 class SmoldynProcess(Step):
@@ -18,60 +18,37 @@ class SmoldynProcess(Step):
         'model_filepath': 'string',
     }
 
-    '''def __init__(self, config: Union[Dict, None] = None):
-        super().__init__(config)
-
-        # ensure correct config parameters
-        if not self.config.get('model_filepath'):
-            raise ValueError('The config requires a path to a Smoldyn model file.')
-
-        # create an instance of SmoldynModel
-        # TODO: Would it be helpful to create a generic Model object since everything is from file in the API?
-        model = SmoldynModel(self.config['model_filepath'])
-
-        # initialize the simulator from a Smoldyn model.txt file.
-        self.simulation: sm.Simulation = model.simulation
-        # self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath']) ???
-
-        # get input ports as above
-        self.input_ports: List[str] = ['species', 'model_parameters']
-        # self.input_ports = list(model.counts.keys()) ???
-
-        # in the case of this particular model file, listmols is output and thus species should be counted.
-        self.output_ports = [
-            'species'
-        ]
-
-        # Get the species
-        self.species_list: List[str] = [
-            self.simulation.getSpeciesName(i) for i in range(model.counts.get('species'))
-        ]
-
-        # Get boundaries for uniform
-        self.boundaries: Tuple[List[float], List[float]] = self.simulation.getBoundaries()
-
-        # Get model parameters
-        self.model_parameters_dict: Dict[str, int] = model.definitions
-        self.model_parameters_list: List[str] = list(self.model_parameters_dict.keys())
-
-        # Get a list of reactions
-        self.reaction_list: List[Tuple[str]] = model.query('reaction', stringify=True)'''
-
     def __init__(self, config=None):
         super().__init__(config)
-        if not self.config.get('model_filepath'):
+
+        # specify the model fp for clarity
+        self.model_filepath = self.config.get('model_filepath')
+
+        # enforce model filepath passing
+        if not self.model_filepath:
             raise ValueError('The config requires a path to a Smoldyn model file.')
 
-        # TODO: Would it be helpful to create a generic Model object since everything is from file in the API?
-
         # initialize the simulator from a Smoldyn model.txt file.
-        self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath'])
+        self.simulation: sm.Simulation = sm.Simulation.fromFile(self.model_filepath)
+
+        # query the model file to ensure that the appropriate Smoldyn output commands are present
+        if not query_model(self.model_filepath, 'cmd'):
+            self.simulation.addOutputData('executiontime')
+            self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 executiontime', cmd_type='i')
+            self.simulation.addOutputData('listmols')
+            self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 listmols', cmd_type='i')
+
+        # get a list of the reactions
+        self.reactions: List[str] = query_model(self.model_filepath, 'reaction', stringify=True)
+
+        # get the species names
+        species_count = self.simulation.count()['species']
+        self.species: List[str] = []
+        for index in range(species_count):
+            species_name = self.simulation.getSpeciesName(index)
+            self.species.append(species_name)
 
 
-
-
-
-    # TODO -- is initial state even working for steps?
     def initial_state(self, config: Union[Dict, None] = None):
         """NOTE: Due to the nature of this model, Smoldyn assigns a random uniform distribution of
             integers as the initial coordinate (x, y, z) values for the simulation.
@@ -99,18 +76,6 @@ class SmoldynProcess(Step):
             'model_parameters': self.model_parameters_dict
         }
 
-    '''def schema(self):
-        return {
-            'inputs': {
-                'time': 'float',
-                'time_stop': 'float',
-                'dt': 'float'
-            },
-            'outputs': {
-                'results': {'_type': 'numpy_array', '_apply': 'set'}  # TODO: update Smoldyn-specific return type
-            }
-        }'''
-
     def schema(self):
         float_set = {'_type': 'float', '_apply': 'set'}
         string_set = float_set = {'_type': 'string', '_apply': 'set'}
@@ -129,12 +94,6 @@ class SmoldynProcess(Step):
                 reaction_id: string_set for reaction_id in self.reaction_list
             },
         }
-
-    '''def update(self, inputs):
-        results = self.simulator.run(inputs['time_stop'], inputs['dt'])
-        return {
-            'results': results
-        }'''
 
     def update(self, state, interval):
         # HERE IS WHERE Simulation.updateSim() should go!!!!!
