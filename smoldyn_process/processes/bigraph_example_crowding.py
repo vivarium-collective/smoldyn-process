@@ -33,20 +33,12 @@ class SmoldynProcess(Process):
         # initialize the simulator from a Smoldyn model.txt file.
         self.simulation: sm.Simulation = sm.Simulation.fromFile(self.model_filepath)
 
-        '''# query the model file to ensure that the appropriate Smoldyn output commands are present
+        # query the model file to ensure that the appropriate Smoldyn output commands are present
         if not query_model(self.model_filepath, 'cmd'):
             self.simulation.addOutputData('executiontime')
             self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 executiontime', cmd_type='i')
             self.simulation.addOutputData('listmols')
             self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 listmols', cmd_type='i')
-
-        # TODO: Will this work?
-        # Add counts to outputs
-        self.simulation.addOutputData('counts')
-        self.simulation.addCommand(cmd='molcount counts', cmd_type='E')'''
-
-        # get a dict of the reactions
-        self.reactions = get_reactions(self.model_filepath)
 
         # get the species names
         species_count = self.simulation.count()['species']
@@ -54,30 +46,6 @@ class SmoldynProcess(Process):
         for index in range(species_count):
             species_name = self.simulation.getSpeciesName(index)
             self.species.append(species_name)
-
-        # make the species
-        species = {}
-        for name, config in self.config['species'].items():
-            species[name] = self.simulation.addSpecies(name, **config)
-            self.species.append(name)
-
-        # make the reactions
-        """
-        Below expects the reaction to be in the form of a dict where:
-            reaction = {
-                'subs': substrate values/ids,
-                'prds': product values/ids,
-        """
-        for rxn_name, config in self.reactions.items():
-            substrate_names = config.pop('subs')
-            product_names = config.pop('prds')
-            substrates = [species[name] for name in substrate_names]
-            products = [species[name] for name in product_names]
-            self.simulation.addReaction(
-                rxn_name,
-                subs=substrates,
-                prds=products,
-                **config)
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step
@@ -125,20 +93,26 @@ class SmoldynProcess(Process):
             }
         }
 
-    def update(self, state, interval):
-        ##UPDATE FOR SMOLDYN!
-        # set reaction bounds
-        reaction_bounds = state['reaction_bounds']
-        for reaction_id, bounds in reaction_bounds.items():
-            self.model.reactions.get_by_id(reaction_id).bounds = (bounds['lower_bound'], bounds['upper_bound'])
+    def update(self, state, interval) -> Dict:
+        molecules = state['molecules']
+        for mol_name, mol_state in molecules.items():
+            self.set_uniform(mol_name, mol_state)
 
-        # run solver
-        solution = self.model.optimize()
+        # run the simulation for a given interval
+        self.simulation.run(
+            stop=interval,
+            dt=self.simulation.dt
+        )
 
-        return {
-            'fluxes': solution.fluxes.to_dict(),
-            'objective_value': solution.objective_value
-        }
+        # get the data, clear the buffer
+        data = self.simulation.getOutputData('listmols', True)
+
+        # get the final counts for the update
+        final_counts = data[-1]
+        molecules = {}
+        for index, name in enumerate(self.species, 1):
+            molecules[name] = int(final_counts[index]) - state['molecules'][name]
+        return {'molecules': molecules}
 
 
 # register the smoldyn process
@@ -158,11 +132,7 @@ def test_process():
                 'animate': False,
             },
             'wires': {
-                'time': ['time_store'],
-                'floating_species': ['floating_species_store'],
-                'boundary_species': ['boundary_species_store'],
-                'model_parameters': ['model_parameters_store'],
-                'reactions': ['reactions_store'],
+                'molecules': ['molecules_store'],
             }
         },
         'emitter': {
@@ -171,13 +141,13 @@ def test_process():
             'config': {
                 'ports': {
                     'inputs': {
-                        'floating_species': 'tree[float]'
+                        'molecules': 'dict'
                     }
                 }
             },
             'wires': {
                 'inputs': {
-                    'floating_species': ['floating_species_store'],
+                    'molecules': ['molecules_store'],
                 }
             }
         }
@@ -187,8 +157,6 @@ def test_process():
     workflow = Composite({
         'state': instance
     })
-
-    # initial_state = workflow.initial_state()
 
     # run
     workflow.run(10)
@@ -198,53 +166,5 @@ def test_process():
     print(f'RESULTS: {pf(results)}')
 
 
-def test_step():
-
-    # this is the instance for the composite process to run
-    instance = {
-        'start_time_store': 0,
-        'run_time_store': 1,
-        'results_store': None,  # TODO -- why is this not automatically added into the schema because of tellurium schema?
-        'tellurium': {
-            '_type': 'step',
-            'address': 'local:tellurium_step',  # using a local toy process
-            'config': {
-                'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
-            },
-            'wires': {
-                'inputs': {
-                    'time': ['start_time_store'],
-                    'run_time': ['run_time_store'],
-                    'floating_species': ['floating_species_store'],
-                    'boundary_species': ['boundary_species_store'],
-                    'model_parameters': ['model_parameters_store'],
-                    'reactions': ['reactions_store'],
-                },
-                'outputs': {
-                    'results': ['results_store'],
-                }
-            }
-        }
-    }
-
-    # make the composite
-    workflow = Composite({
-        'state': instance
-    })
-
-    # initial_state = workflow.initial_state()
-
-    # run
-    update = workflow.run(10)
-
-    print(f'UPDATE: {update}')
-
-    # gather results
-    # results = workflow.gather_results()
-    # print(f'RESULTS: {pf(results)}')
-
-
-
 if __name__ == '__main__':
-    # test_process()
-    test_step()
+    test_process()
