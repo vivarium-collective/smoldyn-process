@@ -58,13 +58,47 @@ def list_model(model_fp: str) -> List[str]:
                     return member
 
 
-def query_model(model_fp: str, value: str) -> List[Tuple[str]]:
-    model_as_list = list_model(model_fp)
-    values = []
-    for line in model_as_list:
-        if line.startswith(value):
-            values.append(tuple(line.split()))
-    return values
+def query_model(model_fp: str, value: str, stringify: bool = False) -> Union[List[Tuple[str]], List[str]]:
+    """Query `self.model_list` for a given value/set of values and return
+        a list of single-space delimited tuples of queried values. Raises a `ValueError`
+        if the value is not found as a term at the model in `model_fp`.
+
+            TODO: filter out comments and replace any definitions with the actual value.
+
+            Args:
+                model_fp:`str`: path belonging to the queried model.
+                value:`str`: value by which to query the document.
+                stringify:`bool`: if set to `True`, returns the query results as single strings rather than
+                    delimited tuples. Defaults to `False`.
+
+            Returns:
+                `Union[List[Tuple[str]], List[str]]`
+    """
+
+    def _query_model(model_fp: str, value: str) -> List[Tuple[str]]:
+        model_as_list = list_model(model_fp)
+        values = []
+        for line in model_as_list:
+            if line.startswith(value):
+                values.append(tuple(line.split()))
+        if not values:
+            raise ValueError(f'{value} was not found in the model file.')
+        else:
+            return values
+
+    result_list = _query_model(model_fp, value)
+    if stringify:
+        stringified_results = []
+        for result in result_list:
+            r = " ".join(result)
+            stringified_results.append(r)
+        return stringified_results
+    else:
+        return result_list
+
+
+def model_definitions(model_fp: str):
+    pass
 
 
 class SmoldynModel:
