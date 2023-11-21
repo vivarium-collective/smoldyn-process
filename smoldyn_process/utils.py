@@ -122,6 +122,20 @@ def model_definitions(model_fp: str) -> Dict[str, float]:
     return definitions
 
 
+def get_reactions(model_fp: str):
+    reactions_spec = {'subs': [], 'prds': []}
+    reactions = query_model(model_fp, 'reaction', stringify=True)
+    for reaction in reactions:
+        if not 'reaction_probability' in reaction:
+            split_reaction = reaction.split(' -> ')
+            subs = split_reaction[0]
+            prds = split_reaction[1]
+            reactions_spec['subs'].append(subs)
+            reactions_spec['prds'].append(prds)
+    return reactions_spec
+
+
+
 class ProcessModel(ABC):
     """An Abstract class that is meant to be more generalized than just Smoldyn."""
     fp: str

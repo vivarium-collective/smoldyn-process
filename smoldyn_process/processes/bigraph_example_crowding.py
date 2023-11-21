@@ -16,6 +16,7 @@ class SmoldynProcess(Process):
 
     config_schema = {
         'model_filepath': 'string',
+        'species': 'dict',
         'animate': 'boolean'
     }
 
@@ -32,12 +33,17 @@ class SmoldynProcess(Process):
         # initialize the simulator from a Smoldyn model.txt file.
         self.simulation: sm.Simulation = sm.Simulation.fromFile(self.model_filepath)
 
-        # query the model file to ensure that the appropriate Smoldyn output commands are present
+        '''# query the model file to ensure that the appropriate Smoldyn output commands are present
         if not query_model(self.model_filepath, 'cmd'):
             self.simulation.addOutputData('executiontime')
             self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 executiontime', cmd_type='i')
             self.simulation.addOutputData('listmols')
             self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 listmols', cmd_type='i')
+
+        # TODO: Will this work?
+        # Add counts to outputs
+        self.simulation.addOutputData('counts')
+        self.simulation.addCommand(cmd='molcount counts', cmd_type='E')'''
 
         # get a list of the reactions
         self.reactions: List[str] = query_model(self.model_filepath, 'reaction', stringify=True)
@@ -49,6 +55,30 @@ class SmoldynProcess(Process):
             species_name = self.simulation.getSpeciesName(index)
             self.species.append(species_name)
 
+        # make the species
+        species = {}
+        for name, config in self.config['species'].items():
+            species[name] = self.simulation.addSpecies(name, **config)
+            self.species.append(name)
+
+        # make the reactions
+        """
+        Below expects the reaction to be in the form of a dict where:
+            reaction = {
+                'subs': substrate values/ids,
+                'prds': product values/ids,
+        """
+        for rxn_name, config in self.reactions.items():
+            substrate_names = config.pop('subs')
+            product_names = config.pop('prds')
+            substrates = [species[name] for name in substrate_names]
+            products = [species[name] for name in product_names]
+            self.simulation.addReaction(
+                rxn_name,
+                subs=substrates,
+                prds=products,
+                **config)
+
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step
         self.boundaries = self.simulation.getBoundaries()
@@ -57,7 +87,7 @@ class SmoldynProcess(Process):
         if self.config['animate']:
             self.simulation.addGraphics('opengl')
 
-    def initial_state(self, config: Union[Dict, None] = None):
+    def initial_state(self):
         """NOTE: Due to the nature of this model, Smoldyn assigns a random uniform distribution of
             integers as the initial coordinate (x, y, z) values for the simulation.
 
@@ -68,9 +98,10 @@ class SmoldynProcess(Process):
         """
         # create species dict of coordinates and initialize to None
 
-        state = {'molecules': {}}
-        for molecule in self.species:
-            self.set_uniform(molecule, config)
+        state = {
+            'molecules': {}
+        }
+
         return state
 
     def set_uniform(self, name, config):
@@ -88,7 +119,8 @@ class SmoldynProcess(Process):
                 mol_name: {
                     'coordinates': tuple_type,
                     'velocity': tuple_type,
-                    'mol_type': {'_type': 'string', '_apply': 'set'}
+                    'mol_type': {'_type': 'string', '_apply': 'set'},
+                    'counts': 'int'
                 } for mol_name in self.species
             }
         }
@@ -114,13 +146,16 @@ process_registry.register('smoldyn_process', SmoldynProcess)
 
 
 def test_process():
+    """Test the smoldyn process using the crowding model."""
+
     # this is the instance for the composite process to run
     instance = {
-        'tellurium': {
+        'smoldyn': {
             '_type': 'process',
-            'address': 'local:tellurium_process',  # using a local toy process
+            'address': 'local:smoldyn_process',
             'config': {
-                'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+                'model_filepath': 'smoldyn_process/examples/model_files/crowding_model.txt',
+                'animate': False,
             },
             'wires': {
                 'time': ['time_store'],
