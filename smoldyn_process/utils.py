@@ -116,7 +116,7 @@ class SmoldynModel:
         else:
             return values
 
-    def query(self, value: str) -> List[Tuple[str]]:
+    def query(self, value: str, stringify: bool = False) -> Union[List[Tuple[str]], List[str]]:
         """Query `self.model_list` for a given value/set of values and return
             a list of single-space delimited tuples of queried values. Raises a `ValueError`
             if the value is not found as a term in `self.list_model`.
@@ -125,11 +125,21 @@ class SmoldynModel:
 
             Args:
                 value:`str`: value by which to query the document.
+                stringify:`bool`: if set to `True`, returns the query results as single strings rather than
+                    delimited tuples. Defaults to `False`.
 
             Returns:
-                `List[Tuple[str]]`
+                `Union[List[Tuple[str]], List[str]]`
         """
-        return self._query(value)
+        result_list = self._query(value)
+        if stringify:
+            stringified_results = []
+            for result in result_list:
+                r = " ".join(result)
+                stringified_results.append(r)
+            return stringified_results
+        else:
+            return result_list
 
     def list_model(self) -> List[str]:
         """Get a Smoldyn model file in the form of a list of strings delimited by line break.
