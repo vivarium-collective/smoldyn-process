@@ -8,7 +8,7 @@ import numpy as np
 import smoldyn as sm
 from process_bigraph import Process, Step, Composite, process_registry, types
 from smoldyn_process.sed2 import pf
-from smoldyn_process.utils import SmoldynModel
+from smoldyn_process.utils import query_model, model_definitions
 
 
 class SmoldynProcess(Step):
@@ -62,13 +62,10 @@ class SmoldynProcess(Step):
         if not self.config.get('model_filepath'):
             raise ValueError('The config requires a path to a Smoldyn model file.')
 
-            # create an instance of SmoldynModel
-            # TODO: Would it be helpful to create a generic Model object since everything is from file in the API?
-        model = SmoldynModel(self.config['model_filepath'])
+        # TODO: Would it be helpful to create a generic Model object since everything is from file in the API?
 
         # initialize the simulator from a Smoldyn model.txt file.
-        self.simulation: sm.Simulation = model.simulation
-        # self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath']) ???
+        self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath'])
 
 
 
