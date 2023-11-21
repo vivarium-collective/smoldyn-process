@@ -16,7 +16,7 @@ class SmoldynProcess(Step):
         'model_filepath': 'string',
     }
 
-    def __init__(self, config=None):
+    def __init__(self, config: Union[Dict, None] = None):
         super().__init__(config)
 
         # initialize the simulator from a Smoldyn model.txt file.
@@ -46,12 +46,7 @@ class SmoldynProcess(Step):
         self.species_list = [self.simulator.getSpeciesName(i) for i in range(model.counts.get('species'))]
 
         # Get boundaries for uniform
-        boundaries = self.simulator.getBoundaries()
-        i = len(boundaries)
-        self.boundaries_dict = {
-            'low': boundaries[i - 1],
-            'high': boundaries[i]
-        }
+        self.boundaries = self.simulator.getBoundaries()
 
         # Get model parameters
         self.model_parameters_dict = model.definitions
@@ -61,11 +56,30 @@ class SmoldynProcess(Step):
 
 
     # TODO -- is initial state even working for steps?
-    def initial_state(self, config=None):
+    def initial_state(self, config: Union[Dict, None] = None):
+        """NOTE: Due to the nature of this model, Smoldyn assigns a random uniform distribution of
+            integers as the initial coordinate (x, y, z) values for the simulation.
+
+            Args:
+                config:`Dict`: configuration by which to read the relevant values at initialization
+                    of simulation. Defaults to `None`.
+        """
+        # create species dict of coordinates and initialize to None
+        species_dict = {}
+        for spec in self.species_list:
+            species_dict[spec] = None
+
+        # create boundaries dict, accounting for each agent:
+        n_boundaries = len(self.boundaries) - 1
+        boundaries_dict = {
+            'low': [self.boundaries[n_boundaries - 1] for spec in self.species_list],
+            'high': [self.boundaries[n_boundaries] for spec in self.species_list]
+        }
+
         return {
             'time': 0.0,
-            'species': self.species_list,
-            'boundaries': self.boundaries_dict,
+            'species': species_dict,
+            'boundaries': boundaries_dict,
             'model_parameters': self.model_parameters_dict
         }
 
