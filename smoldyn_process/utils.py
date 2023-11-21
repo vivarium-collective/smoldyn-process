@@ -41,7 +41,7 @@ def get_species_from_model_file(model_fp: str) -> List[str]:
     return get_species(sim)
 
 
-def get_model_as_list(model_fp: str) -> List[str]:
+def list_model(model_fp: str) -> List[str]:
     """Get a Smoldyn model file in the form of a list of strings delimited by line break.
 
         Args:
@@ -58,8 +58,8 @@ def get_model_as_list(model_fp: str) -> List[str]:
                     return member
 
 
-def get_value_from_model_list(model_fp: str, value: str) -> List[Tuple[str]]:
-    model_as_list = get_model_as_list(model_fp)
+def query_model(model_fp: str, value: str) -> List[Tuple[str]]:
+    model_as_list = list_model(model_fp)
     values = []
     for line in model_as_list:
         if line.startswith(value):

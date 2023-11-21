@@ -18,18 +18,18 @@ class SmoldynProcess(Step):
         'model_filepath': 'string',
     }
 
-    def __init__(self, config: Union[Dict, None] = None):
+    '''def __init__(self, config: Union[Dict, None] = None):
         super().__init__(config)
 
-        # initialize the simulator from a Smoldyn model.txt file.
+        # ensure correct config parameters
         if not self.config.get('model_filepath'):
             raise ValueError('The config requires a path to a Smoldyn model file.')
 
         # create an instance of SmoldynModel
         # TODO: Would it be helpful to create a generic Model object since everything is from file in the API?
-        model = SmoldynModel(self.config.get('model_filepath'))
+        model = SmoldynModel(self.config['model_filepath'])
 
-        # specify the process simulator
+        # initialize the simulator from a Smoldyn model.txt file.
         self.simulation: sm.Simulation = model.simulation
         # self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath']) ???
 
@@ -55,7 +55,24 @@ class SmoldynProcess(Step):
         self.model_parameters_list: List[str] = list(self.model_parameters_dict.keys())
 
         # Get a list of reactions
-        self.reaction_list: List[Tuple[str]] = model.query('reaction', stringify=True)
+        self.reaction_list: List[Tuple[str]] = model.query('reaction', stringify=True)'''
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        if not self.config.get('model_filepath'):
+            raise ValueError('The config requires a path to a Smoldyn model file.')
+
+            # create an instance of SmoldynModel
+            # TODO: Would it be helpful to create a generic Model object since everything is from file in the API?
+        model = SmoldynModel(self.config['model_filepath'])
+
+        # initialize the simulator from a Smoldyn model.txt file.
+        self.simulation: sm.Simulation = model.simulation
+        # self.simulator: sm.Simulation = sm.Simulation.fromFile(self.config['model_filepath']) ???
+
+
+
+
 
     # TODO -- is initial state even working for steps?
     def initial_state(self, config: Union[Dict, None] = None):
