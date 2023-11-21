@@ -123,15 +123,27 @@ def model_definitions(model_fp: str) -> Dict[str, float]:
 
 
 def get_reactions(model_fp: str):
-    reactions_spec = {'subs': [], 'prds': []}
-    reactions = query_model(model_fp, 'reaction', stringify=True)
+    """This expects to output a dict of:
+
+    {reaction name: {
+        'subs': [a list of reaction substrates],
+        'prds': [a list of reaction products corresponding to each sub],
+        }
+    }
+    """
+
+    _reactions = {}
+    reactions = query_model(model_fp, 'reaction')
     for reaction in reactions:
+        reaction_spec = {'subs': [], 'prds': []}
+        reaction_name = reaction[0]
         if not 'reaction_probability' in reaction:
             split_reaction = reaction.split(' -> ')
             subs = split_reaction[0]
             prds = split_reaction[1]
-            reactions_spec['subs'].append(subs)
-            reactions_spec['prds'].append(prds)
+            reaction_spec['subs'].append(subs)
+            reaction_spec['prds'].append(prds)
+            _reactions[reaction_name] = reaction_spec
     return reactions_spec
 
 

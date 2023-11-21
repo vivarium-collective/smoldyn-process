@@ -8,7 +8,7 @@ import numpy as np
 import smoldyn as sm
 from process_bigraph import Process, Composite, process_registry, types
 from smoldyn_process.sed2 import pf
-from smoldyn_process.utils import query_model, model_definitions, list_model
+from smoldyn_process.utils import query_model, model_definitions, list_model, get_reactions
 
 
 class SmoldynProcess(Process):
@@ -45,8 +45,8 @@ class SmoldynProcess(Process):
         self.simulation.addOutputData('counts')
         self.simulation.addCommand(cmd='molcount counts', cmd_type='E')'''
 
-        # get a list of the reactions
-        self.reactions: List[str] = query_model(self.model_filepath, 'reaction', stringify=True)
+        # get a dict of the reactions
+        self.reactions = get_reactions(self.model_filepath)
 
         # get the species names
         species_count = self.simulation.count()['species']
