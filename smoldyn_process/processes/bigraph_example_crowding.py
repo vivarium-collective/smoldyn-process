@@ -92,7 +92,7 @@ class SmoldynProcess(Process):
             highpos=config.get('high'),
             lowpos=config.get('low'))
 
-    def schema(self):
+    '''def schema(self):
         float_set = {'_type': 'float', '_apply': 'set'}
         string_set = float_set = {'_type': 'string', '_apply': 'set'}
         return {
@@ -109,6 +109,18 @@ class SmoldynProcess(Process):
             'reactions': {
                 reaction_id: string_set for reaction_id in self.reaction_list
             },
+        }'''
+
+    def schema(self):
+        tuple_type = {'_type': 'tuple', '_apply': 'set'}
+        return {
+            'molecules': {
+                mol_name: {
+                    'coordinates': tuple_type,
+                    'velocity': tuple_type,
+                    'mol_type': {'_type': 'string', '_apply': 'set'}
+                } for mol_name in self.species
+            }
         }
 
     def update(self, state, interval):

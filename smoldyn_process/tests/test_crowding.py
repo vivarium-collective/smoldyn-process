@@ -1,28 +1,15 @@
-from smoldyn_process.utils import SmoldynModel
+from smoldyn import Simulation
 
 
 model_fp = 'smoldyn_process/examples/model_files/crowding_model.txt'
 
-model = SmoldynModel(model_fp)
+sim = Simulation.fromFile(model_fp)
 
-for i, v in enumerate(dir(model.simulation)):
-    print(f'{i}: {v}')
-    print()
+sim.addOutputData('listmols')
+sim.addCommand(cmd='listmols', cmd_type='E')
+sim.run(sim.stop, sim.dt)
+data = sim.getOutputData('listmols', False)
 
-specs = [model.simulation.getSpeciesName(i) for i in range(model.counts.get('species'))]
-bounds = model.simulation.getBoundaries()
-
-print(bounds)
-# create boundaries dict, accounting for each agent:
-i = len(bounds) - 1
-boundaries_dict = {
-    'low': [bounds[i - 1] for spec in specs],
-    'high': [bounds[i] for spec in specs]
-}
-
-print(boundaries_dict)
-
-
-print(model.query('reaction', stringify=False))
-
+# print(data)
+# print(type(data))
 
