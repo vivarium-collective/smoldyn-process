@@ -1,5 +1,5 @@
 # from process_bigraph.type_system import types  #ProcessTypes
-from sed2.sedbuilder import SEDBuilder
+from smoldyn_process.sed2.sedbuilder import SEDBuilder
 import pprint
 
 pretty = pprint.PrettyPrinter(indent=2)

@@ -1,4 +1,4 @@
-from sed2.builder import Builder, Node
+from smoldyn_process.sed2.builder import Builder, Node
 import json
 class SEDBuilder(Builder):
     def __init__(self, ontologies, tree=None):
