@@ -47,14 +47,17 @@ class SmoldynProcess(Process):
             species_object = sm.Species(
                 simulation=self.simulation,
                 name=species_name,
-                state=self.config.get('molecules')[species_name].get('state')
+                # state=self.config.get('molecules')[species_name].get('state')
             )
             self.species.append(species_object)
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
-            # ...to be removed when expandable compartment size is possible
-        self.boundaries = self.simulation.getBoundaries()
+            # ...to be removed when expandable compartment size is possible:
+
+        boundaries: Tuple[List[float], List[float]] = self.simulation.getBoundaries()
+        self.high_bounds = boundaries[0]
+        self.low_bounds = boundaries[1]
 
         # set graphics (defaults to False)
         if self.config['animate']:
@@ -67,6 +70,15 @@ class SmoldynProcess(Process):
             the molecules according to a `highpos`[x,y] and `lowpos`[x,y] where high and low pos are
             the higher and lower bounds of the molecule spatial distribution.
         """
+
+        # TODO: update for distribution!
+        species_dict = {}
+        for spec in self.species:
+            name = spec.name
+            config = {
+                'coordinates': spec.
+            }
+
         state = {
             'molecules': {}
         }
@@ -85,27 +97,29 @@ class SmoldynProcess(Process):
         self.simulation.runCommand(f'killmol {name}')
         self.simulation.addSolutionMolecules(
             name,
-            config.get('counts'),
+            config['molecules'].get(name)['count'],
             highpos=config.get('high'),
             lowpos=config.get('low'))
 
-    def schema(self) -> Dict[str, Dict[str, Dict[str, Union[str, Dict[str, str]]]]]:
+    def schema(self) -> Dict[str, Dict[str, Dict[str, Union[str, Dict[str, str]]]], str, str]:
         """Return a dictionary of molecule names and the expected input/output schema at simulation
-            runtime.
+            runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
+            are specified alongside molecules.
         """
         tuple_type = {'_type': 'tuple', '_apply': 'set'}
+        list_type = {'_type': 'list', '_apply': 'set'}
         return {
             'molecules': {
                 mol_name: {
                     'coordinates': tuple_type,
                     'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
-                    'mol_type': {'_type': 'string', '_apply': 'set'},
-                    'counts': 'int',
-                    'high': 'list[number, number]',
-                    'low': 'list[number, number]',
+                    'mol_type': 'string',
+                    'count': 'int',
                     'state': 'string'
                 } for mol_name in self.species
-            }
+            },
+            'high': list_type,
+            'low': list_type
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -149,6 +163,7 @@ def test_process():
     """Test the smoldyn process using the crowding model."""
 
     # this is the instance for the composite process to run
+        # NOTE:
     instance = {
         'smoldyn': {
             '_type': 'process',
