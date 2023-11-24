@@ -11,7 +11,7 @@ class SmoldynProcess(Process):
     config_schema = {
         'model_filepath': 'string',
         'species': 'dict',
-        'animate': 'boolean'
+        'animate': 'boolean',
     }
 
     def __init__(self, config: Dict = None):
@@ -35,29 +35,38 @@ class SmoldynProcess(Process):
             self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 listmols', cmd_type='i')
         """
 
-        # get the species names
+        # Set the species
+
+        # count the num species
         species_count = self.simulation.count()['species']
-        self.species: List[str] = []
+
+        # create a list of species objects
+        self.species: List[sm.Species] = []
         for index in range(species_count):
             species_name = self.simulation.getSpeciesName(index)
-            self.species.append(species_name)
+            species_object = sm.Species(
+                simulation=self.simulation,
+                name=species_name,
+                state=self.config.get('molecules')[species_name].get('state')
+            )
+            self.species.append(species_object)
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
-        # TODO: add a verification method to ensure that the boundaries do not change on the next step
+        # TODO: add a verification method to ensure that the boundaries do not change on the next step...
+            # ...to be removed when expandable compartment size is possible
         self.boundaries = self.simulation.getBoundaries()
 
         # set graphics (defaults to False)
         if self.config['animate']:
             self.simulation.addGraphics('opengl_better')
 
-    def initial_state(self):
+    def initial_state(self) -> Dict[str, Dict[None]]:
         """Set the initial parameter state of the simulation. NOTE: Due to the nature of this model,
             Smoldyn assigns a random uniform distribution of integers as the initial coordinate (x, y, z)
             values for the simulation. As such, the `set_uniform` method will uniformly distribute
             the molecules according to a `highpos`[x,y] and `lowpos`[x,y] where high and low pos are
             the higher and lower bounds of the molecule spatial distribution.
         """
-
         state = {
             'molecules': {}
         }
@@ -80,7 +89,10 @@ class SmoldynProcess(Process):
             highpos=config.get('high'),
             lowpos=config.get('low'))
 
-    def schema(self):
+    def schema(self) -> Dict[str, Dict[str, Dict[str, Union[str, Dict[str, str]]]]]:
+        """Return a dictionary of molecule names and the expected input/output schema at simulation
+            runtime.
+        """
         tuple_type = {'_type': 'tuple', '_apply': 'set'}
         return {
             'molecules': {
@@ -91,11 +103,23 @@ class SmoldynProcess(Process):
                     'counts': 'int',
                     'high': 'list[number, number]',
                     'low': 'list[number, number]',
+                    'state': 'string'
                 } for mol_name in self.species
             }
         }
 
-    def update(self, state, interval) -> Dict:
+    def update(self, state: Dict, interval: int) -> Dict:
+        """Callback method to be evoked at each Process interval.
+
+            Args:
+                state:`Dict`: current state of the Smoldyn simulation, expressed as a `Dict` whose
+                    schema matches that which is returned by the `self.schema()` API method.
+                interval:`int`: timestep interval at which to provide the update as the output
+                    of this method. NOTE: This update is iteratively called with the `Process` API.
+
+            Returns:
+                `Dict`: New state according to the update at interval
+        """
         molecules = state['molecules']
         for mol_name, mol_state in molecules.items():
             self.set_uniform(mol_name, mol_state)
@@ -117,6 +141,7 @@ class SmoldynProcess(Process):
         return {'molecules': molecules}
 
 
+# register the process above as the name passed in the first argument below
 process_registry.register('smoldyn_process', SmoldynProcess)
 
 
