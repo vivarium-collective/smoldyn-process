@@ -51,17 +51,28 @@ class SmoldynProcess(Process):
             self.simulation.addGraphics('opengl_better')
 
     def initial_state(self):
-        """NOTE: Due to the nature of this model, Smoldyn assigns a random uniform distribution of
-            integers as the initial coordinate (x, y, z) values for the simulation.
+        """Set the initial parameter state of the simulation. NOTE: Due to the nature of this model,
+            Smoldyn assigns a random uniform distribution of integers as the initial coordinate (x, y, z)
+            values for the simulation. As such, the `set_uniform` method will uniformly distribute
+            the molecules according to a `highpos`[x,y] and `lowpos`[x,y] where high and low pos are
+            the higher and lower bounds of the molecule spatial distribution.
         """
-        # create species dict of coordinates and initialize to None
 
         state = {
             'molecules': {}
         }
         return state
 
-    def set_uniform(self, name, config):
+    def set_uniform(self, name: str, config: Dict[str, Any]) -> None:
+        """Add a distribution of molecules to the solution in
+            the simulation memory given a higher and lower bound x,y coordinate.
+            TODO: If pymunk expands the species compartment, account for
+            expanding `highpos` and `lowpos`.
+
+            Args:
+                name:`str`: name of the given molecule.
+                config:`Dict`: molecule state.
+        """
         self.simulation.runCommand(f'killmol {name}')
         self.simulation.addSolutionMolecules(
             name,
@@ -77,7 +88,9 @@ class SmoldynProcess(Process):
                     'coordinates': tuple_type,
                     'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
                     'mol_type': {'_type': 'string', '_apply': 'set'},
-                    'counts': 'int'
+                    'counts': 'int',
+                    'high': 'list[number, number]',
+                    'low': 'list[number, number]',
                 } for mol_name in self.species
             }
         }
