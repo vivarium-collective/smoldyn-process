@@ -10,7 +10,7 @@ class SmoldynProcess(Process):
 
     config_schema = {
         'model_filepath': 'string',
-        'species': 'dict',
+        'boundaries': 'tuple[list[number, number], list[number, number]]',
         'animate': 'boolean',
     }
 
@@ -35,7 +35,7 @@ class SmoldynProcess(Process):
             self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 listmols', cmd_type='i')
         """
 
-        # Set the species
+        # TODO: Add a handler that checks if self.config.get('molecules') is None, and sets thru Python if not
 
         # count the num species
         species_count = self.simulation.count()['species']
@@ -44,26 +44,18 @@ class SmoldynProcess(Process):
         self.species: List[sm.Species] = []
         for index in range(species_count):
             species_name = self.simulation.getSpeciesName(index)
-            species_object = sm.Species(
-                simulation=self.simulation,
-                name=species_name,
-                # state=self.config.get('molecules')[species_name].get('state')
-            )
-            self.species.append(species_object)
+            self.species.append(species_name)
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
             # ...to be removed when expandable compartment size is possible:
-
-        boundaries: Tuple[List[float], List[float]] = self.simulation.getBoundaries()
-        self.high_bounds = boundaries[0]
-        self.low_bounds = boundaries[1]
+        self.boundaries = self.config.get('boundaries') or self.simulation.getBoundaries()
 
         # set graphics (defaults to False)
         if self.config['animate']:
             self.simulation.addGraphics('opengl_better')
 
-    def initial_state(self) -> Dict[str, Dict[None]]:
+    def initial_state(self) -> Dict[str, Dict]:
         """Set the initial parameter state of the simulation. NOTE: Due to the nature of this model,
             Smoldyn assigns a random uniform distribution of integers as the initial coordinate (x, y, z)
             values for the simulation. As such, the `set_uniform` method will uniformly distribute
@@ -72,21 +64,41 @@ class SmoldynProcess(Process):
         """
 
         # TODO: update for distribution!
-        species_dict = {}
-        for spec in self.species:
-            name = spec.name
-            config = {
-                'coordinates': spec.
-            }
+        '''for spec in self.species:
+            molecule = self.config['molecules'].get(spec)
+            self.simulation.addMolecules(
+                species=spec,
+                number=molecule['count'],
+                pos=molecule['coordinates']
+            )'''
 
+        # TODO: fill these with a default state with get initial mol state method
         state = {
-            'molecules': {}
+            'molecules': self.config.get('molecules')
         }
         return state
 
+    def get_initial_molecule_state(self, molname: str, **mol_config) -> Dict:
+        """Return a dict expressing a molecule's initial state.
+
+            Args:
+                molname:`str`: name of the molecule.
+
+            Kwargs:
+                coordinates:`Tuple[float, float]`
+                velocity:`Tuple[float, float]`
+                mol_type:`str`
+                count:`int`
+                state:`str`
+        """
+        initial_state = {
+            molname: {**mol_config}
+        }
+
     def set_uniform(self, name: str, config: Dict[str, Any]) -> None:
         """Add a distribution of molecules to the solution in
-            the simulation memory given a higher and lower bound x,y coordinate.
+            the simulation memory given a higher and lower bound x,y coordinate. Smoldyn assumes
+            a global boundary versus individual species boundaries.
             TODO: If pymunk expands the species compartment, account for
             expanding `highpos` and `lowpos`.
 
@@ -94,14 +106,22 @@ class SmoldynProcess(Process):
                 name:`str`: name of the given molecule.
                 config:`Dict`: molecule state.
         """
+        # get the boundaries
+        low_bounds = self.boundaries[0]
+        high_bounds = self.boundaries[1]
+
+        # kill the mol, effectively resetting it
         self.simulation.runCommand(f'killmol {name}')
+
+        # redistribute the molecule according to the bounds
         self.simulation.addSolutionMolecules(
             name,
             config['molecules'].get(name)['count'],
-            highpos=config.get('high'),
-            lowpos=config.get('low'))
+            highpos=high_bounds,
+            lowpos=low_bounds
+        )
 
-    def schema(self) -> Dict[str, Dict[str, Dict[str, Union[str, Dict[str, str]]]], str, str]:
+    def schema(self) -> Dict:
         """Return a dictionary of molecule names and the expected input/output schema at simulation
             runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
             are specified alongside molecules.
@@ -134,7 +154,11 @@ class SmoldynProcess(Process):
             Returns:
                 `Dict`: New state according to the update at interval
         """
+
+        # get the molecule configs
         molecules = state['molecules']
+
+        # distribute the mols according to self.boundaries
         for mol_name, mol_state in molecules.items():
             self.set_uniform(mol_name, mol_state)
 
@@ -162,15 +186,32 @@ process_registry.register('smoldyn_process', SmoldynProcess)
 def test_process():
     """Test the smoldyn process using the crowding model."""
 
+    molecules_config = {
+        'red': {
+            'coordinates': (0,0),
+            'velocity': (0,0),
+            'mol_type': 'red',
+            'count': 250,
+            'state': 'soln'
+        },
+        'green': {
+            'coordinates': (1,0),
+            'velocity': (0,0),
+            'mol_type': 'green',
+            'count': 5,
+            'state': 'soln'
+        }
+    }
+
     # this is the instance for the composite process to run
-        # NOTE:
     instance = {
         'smoldyn': {
             '_type': 'process',
             'address': 'local:smoldyn_process',
             'config': {
-                'model_filepath': 'crowding_model.txt',
+                'model_filepath': 'smoldyn_process/examples/model_files/crowding_model.txt',
                 'animate': False,
+                'molecules': molecules_config,
             },
             'wires': {
                 'molecules': ['molecules_store'],
