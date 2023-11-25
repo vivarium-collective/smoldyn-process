@@ -41,10 +41,10 @@ class SmoldynProcess(Process):
         species_count = self.simulation.count()['species']
 
         # create a list of species objects
-        self.species: List[sm.Species] = []
+        self.species_names: List[str] = []
         for index in range(species_count):
             species_name = self.simulation.getSpeciesName(index)
-            self.species.append(species_name)
+            self.species_names.append(species_name)
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
@@ -61,6 +61,8 @@ class SmoldynProcess(Process):
             values for the simulation. As such, the `set_uniform` method will uniformly distribute
             the molecules according to a `highpos`[x,y] and `lowpos`[x,y] where high and low pos are
             the higher and lower bounds of the molecule spatial distribution.
+
+            NOTE: This method should provide an implementation of the structure denoted in `self.schema`.
         """
 
         # TODO: update for distribution!
@@ -72,28 +74,32 @@ class SmoldynProcess(Process):
                 pos=molecule['coordinates']
             )'''
 
+        species_dict = {}
+        for name in self.species_names:
+            species_dict[name] = self.get_initial_molecule_state(
+                coordinates=(0.0, 0.0),
+                velocity=(0.0, 0.0),
+                count=0,
+                state="soln"
+            )
+
+
         # TODO: fill these with a default state with get initial mol state method
         state = {
-            'molecules': self.config.get('molecules')
+            'molecules': species_dict
         }
         return state
 
-    def get_initial_molecule_state(self, molname: str, **mol_config) -> Dict:
+    def get_initial_molecule_state(self, **mol_config) -> Dict:
         """Return a dict expressing a molecule's initial state.
-
-            Args:
-                molname:`str`: name of the molecule.
 
             Kwargs:
                 coordinates:`Tuple[float, float]`
                 velocity:`Tuple[float, float]`
-                mol_type:`str`
                 count:`int`
                 state:`str`
         """
-        initial_state = {
-            molname: {**mol_config}
-        }
+        return {**mol_config}
 
     def set_uniform(self, name: str, config: Dict[str, Any]) -> None:
         """Add a distribution of molecules to the solution in
@@ -133,10 +139,10 @@ class SmoldynProcess(Process):
                 mol_name: {
                     'coordinates': tuple_type,
                     'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
-                    'mol_type': 'string',
+                    #'mol_type': 'string',
                     'count': 'int',
                     'state': 'string'
-                } for mol_name in self.species
+                } for mol_name in self.species_names
             },
             'high': list_type,
             'low': list_type
@@ -211,7 +217,7 @@ def test_process():
             'config': {
                 'model_filepath': 'smoldyn_process/examples/model_files/crowding_model.txt',
                 'animate': False,
-                'molecules': molecules_config,
+                #'molecules': molecules_config,
             },
             'wires': {
                 'molecules': ['molecules_store'],
