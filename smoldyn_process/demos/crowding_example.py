@@ -1,6 +1,7 @@
 from typing import *
 import numpy as np
 import smoldyn as sm
+from smoldyn._smoldyn import MolecState
 from process_bigraph import Process, Composite, process_registry, types
 from smoldyn_process.sed2 import pf
 
@@ -54,6 +55,7 @@ class SmoldynProcess(Process):
         self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
         self.simulation.addOutputData('molecule_locations')
         self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
+        self.simulation.addSpecies()
 
         # get a list of the simulation species
         species_count = self.simulation.count()['species']
@@ -81,18 +83,19 @@ class SmoldynProcess(Process):
         """
 
         # TODO: update for distribution!
-        species_dict = {}
+        initial_conditions = {}
 
         for name in self.species_names:
-            species_dict[name] = {
+            count = self.simulation.getMoleculeCount(name, MolecState.all)
+            initial_conditions[name] = {
                 'time': 0,
-                'count': 0,
+                'count': count,
                 'coordinates': [],
             }
 
         # TODO: fill these with a default state with get initial mol state method
         state = {
-            'molecules': species_dict
+            'molecules': initial_conditions
         }
         return state
 
