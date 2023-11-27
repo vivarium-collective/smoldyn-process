@@ -20,8 +20,10 @@ class SmoldynProcess(Process):
 
     PLEASE NOTE:
 
-        The current implementation of this class assumes that output commands are not listed in the Smoldyn
-            model file. If they are, simply comment them out before using this.
+        The current implementation of this class assumes 2 key conditions:
+            1. that a smoldyn model file is present and working
+            2. that output commands are not listed in the Smoldyn
+                model file. If they are, simply comment them out before using this.
 
     """
 
@@ -51,12 +53,8 @@ class SmoldynProcess(Process):
         self.simulation.addOutputData('molecule_locations')
         self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
 
-        # TODO: Add a handler that checks if self.config.get('molecules') is None, and sets thru Python if not
-
-        # count the num species
+        # get a list of the simulation species
         species_count = self.simulation.count()['species']
-
-        # create a list of species objects
         self.species_names: List[str] = []
         for index in range(species_count):
             species_name = self.simulation.getSpeciesName(index)
@@ -64,8 +62,7 @@ class SmoldynProcess(Process):
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
-        # ...to be removed when expandable compartment size is possible:
-        self.boundaries = self.simulation.getBoundaries()
+        self.boundaries: Dict[str, List[float]] = dict(zip(['low', 'high'], self.simulation.getBoundaries()))
 
         # set graphics (defaults to False)
         if self.config['animate']:
@@ -101,7 +98,8 @@ class SmoldynProcess(Process):
             the simulation memory given a higher and lower bound x,y coordinate. Smoldyn assumes
             a global boundary versus individual species boundaries.
             TODO: If pymunk expands the species compartment, account for
-            expanding `highpos` and `lowpos`.
+            expanding `highpos` and `lowpos`. This method should be used within the body/logic of
+            the initial state and update class methods.
 
             Args:
                 name:`str`: name of the given molecule.
