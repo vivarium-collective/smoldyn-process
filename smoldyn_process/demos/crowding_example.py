@@ -12,8 +12,10 @@ class SmoldynProcess(Process):
 
     at each `update`, we need the function to do the following for each molecule/species in the simulation:
 
-        - Get the molecule count with Smoldyn lang: (`molcount {molecule_name}`)
-        - Get the molecule positions and relative corresponding time steps, indexed by the molecule name with Smoldyn lang: (`listmols`)[molecule_name]
+        - Get the molecule count with Smoldyn lang: (`molcount {molecule_name}`) shape: [time, ...speciesN],
+            so in the case of a two species simulation: [timestamp, specACounts, specBCounts]
+        - Get the molecule positions and relative corresponding time steps,
+            indexed by the molecule name with Smoldyn lang: (`listmols`)[molecule_name]
         - ?Get the molecule state?
         - Kill the molecule with smoldyn lang: (`killmol {molecule_name}`)
         - Add the molecule back to the solution(cytoplasm), effectively resetting it at boundary coordinates with Python API: (`simulation.addMolecules()
@@ -164,13 +166,13 @@ class SmoldynProcess(Process):
         )
 
         # get the time data, clear the buffer
-        time_data = np.array(self.simulation.getOutputData('time', True)).T.tolist()
+        time_data = self.simulation.getOutputData('time', True)
 
-        # get the data, clear the buffer
-        counts_data = np.array(self.simulation.getOutputData('molecule_counts', True)).T.tolist()
+        # get the counts data, clear the buffer
+        counts_data = self.simulation.getOutputData('molecule_counts', True)
 
         # get the data based on the commands added in the constructor, clear the buffer
-        location_data = np.array(self.simulation.getOutputData('molecule_locations', True)).T.tolist()
+        location_data = self.simulation.getOutputData('molecule_locations', True)
 
         # get the final counts for the update
         final_time = time_data[-1]
