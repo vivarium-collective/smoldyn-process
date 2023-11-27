@@ -6,11 +6,27 @@ from smoldyn_process.sed2 import pf
 
 
 class SmoldynProcess(Process):
-    """Smoldyn-based implementation of bi-graph process' `Process` API."""
+    """Smoldyn-based implementation of bi-graph process' `Process` API. Please note the following:
+
+    For the purpose of this `Process` implementation,
+
+    at each `update`, we need the function to do the following for each molecule/species in the simulation:
+
+        - Get the molecule count with Smoldyn lang: (`molcount {molecule_name}`)
+        - Get the molecule positions and relative corresponding time steps, indexed by the molecule name with Smoldyn lang: (`listmols`)[molecule_name]
+        - ?Get the molecule state?
+        - Kill the molecule with smoldyn lang: (`killmol {molecule_name}`)
+        - Add the molecule back to the solution(cytoplasm), effectively resetting it at boundary coordinates with Python API: (`simulation.addMolecules()
+
+    PLEASE NOTE:
+
+        The current implementation of this class assumes that output commands are not listed in the Smoldyn
+            model file. If they are, simply comment them out before using this.
+
+    """
 
     config_schema = {
         'model_filepath': 'string',
-        'boundaries': 'tuple[list[number, number], list[number, number]]',
         'animate': 'boolean',
     }
 
@@ -27,13 +43,13 @@ class SmoldynProcess(Process):
         # initialize the simulator from a Smoldyn model.txt file.
         self.simulation: sm.Simulation = sm.Simulation.fromFile(self.model_filepath)
 
-        """# query the model file to ensure that the appropriate Smoldyn output commands are present
-        if not query_model(self.model_filepath, 'cmd'):
-            self.simulation.addOutputData('executiontime')
-            self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 executiontime', cmd_type='i')
-            self.simulation.addOutputData('listmols')
-            self.simulation.addCommand(cmd=f'0 {self.simulation.stop} 2 listmols', cmd_type='i')
-        """
+        # add the relevant output files and commands required for the update
+        self.simulation.addOutputData('time')
+        self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
+        self.simulation.addOutputData('molecule_counts')
+        self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
+        self.simulation.addOutputData('molecule_locations')
+        self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
 
         # TODO: Add a handler that checks if self.config.get('molecules') is None, and sets thru Python if not
 
@@ -48,8 +64,8 @@ class SmoldynProcess(Process):
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
-            # ...to be removed when expandable compartment size is possible:
-        self.boundaries = self.config.get('boundaries') or self.simulation.getBoundaries()
+        # ...to be removed when expandable compartment size is possible:
+        self.boundaries = self.simulation.getBoundaries()
 
         # set graphics (defaults to False)
         if self.config['animate']:
@@ -76,30 +92,17 @@ class SmoldynProcess(Process):
 
         species_dict = {}
         for name in self.species_names:
-            species_dict[name] = self.get_initial_molecule_state(
-                coordinates=(0.0, 0.0),
-                velocity=(0.0, 0.0),
-                count=0,
-                state="soln"
-            )
-
+            species_dict[name] = {
+                'time': 0,
+                'count': 0,
+                'coordinates': None,
+            }
 
         # TODO: fill these with a default state with get initial mol state method
         state = {
             'molecules': species_dict
         }
         return state
-
-    def get_initial_molecule_state(self, **mol_config) -> Dict:
-        """Return a dict expressing a molecule's initial state.
-
-            Kwargs:
-                coordinates:`Tuple[float, float]`
-                velocity:`Tuple[float, float]`
-                count:`int`
-                state:`str`
-        """
-        return {**mol_config}
 
     def set_uniform(self, name: str, config: Dict[str, Any]) -> None:
         """Add a distribution of molecules to the solution in
@@ -137,15 +140,14 @@ class SmoldynProcess(Process):
         return {
             'molecules': {
                 mol_name: {
-                    'coordinates': tuple_type,
-                    'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
-                    #'mol_type': 'string',
-                    'count': 'int',
-                    'state': 'string'
+                    'time': 'int',
+                    'count': 'int',  # derived from the molcount output command
+                    'coordinates': list_type,
+                    # 'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
+                    # 'mol_type': 'string',
+                    # 'state': 'string'
                 } for mol_name in self.species_names
-            },
-            'high': list_type,
-            'low': list_type
+            }
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -174,14 +176,31 @@ class SmoldynProcess(Process):
             dt=self.simulation.dt
         )
 
+        # get the time data, clear the buffer
+        time_data = np.array(self.simulation.getOutputData('time', True)).T.tolist()
+
         # get the data, clear the buffer
-        data = self.simulation.getOutputData('listmols', True)
+        counts_data = np.array(self.simulation.getOutputData('molecule_counts', True)).T.tolist()
+
+        # get the data based on the commands added in the constructor, clear the buffer
+        location_data = np.array(self.simulation.getOutputData('molecule_locations', True)).T.tolist()
 
         # get the final counts for the update
-        final_counts = data[-1]
+        final_time = time_data[-1]
+        final_counts = counts_data[-1]
+        final_locations = location_data[-1]
         molecules = {}
-        for index, name in enumerate(self.species, 1):
-            molecules[name] = int(final_counts[index]) - state['molecules'][name]
+        for index, name in enumerate(self.species_names, 1):
+            molecules[name] = {
+                'time': final_time,
+                'count': int(final_counts[index]) - state['molecules'][name],
+                'coordinates': final_locations
+            }
+
+        # uniformly reset the solution molecules based on the updated count for each molecule
+        for species_name in self.species_names:
+            self.set_uniform(species_name, molecules[species_name])
+
         return {'molecules': molecules}
 
 
@@ -192,32 +211,14 @@ process_registry.register('smoldyn_process', SmoldynProcess)
 def test_process():
     """Test the smoldyn process using the crowding model."""
 
-    molecules_config = {
-        'red': {
-            'coordinates': (0,0),
-            'velocity': (0,0),
-            'mol_type': 'red',
-            'count': 250,
-            'state': 'soln'
-        },
-        'green': {
-            'coordinates': (1,0),
-            'velocity': (0,0),
-            'mol_type': 'green',
-            'count': 5,
-            'state': 'soln'
-        }
-    }
-
     # this is the instance for the composite process to run
     instance = {
         'smoldyn': {
             '_type': 'process',
             'address': 'local:smoldyn_process',
             'config': {
-                'model_filepath': 'smoldyn_process/models/model_files/crowding_model.txt',
+                'model_filepath': 'smoldyn_process/examples/model_files/crowding_model.txt',
                 'animate': False,
-                #'molecules': molecules_config,
             },
             'wires': {
                 'molecules': ['molecules_store'],
