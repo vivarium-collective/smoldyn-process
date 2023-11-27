@@ -2,7 +2,7 @@ class Position:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.set_coords(x, y)
+        self.coordinates = self.set_coords(x, y)
 
     def position(self):
         return (self.x, self.y)
@@ -21,6 +21,7 @@ class Position:
     def set_coords(self, xVal, yVal):
         self.set_x(xVal)
         self.set_y(yVal)
+        return [xVal, yVal]
 
 
 
