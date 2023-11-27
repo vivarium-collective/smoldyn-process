@@ -23,7 +23,7 @@ def test_sed1():
             '_type': 'step',
             'address': 'local:tellurium_step',
             'config': {
-                'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+                'sbml_model_path': 'demos/BIOMD0000000061_url.xml',
             },
             'wires': {
                 'inputs': {
@@ -79,7 +79,7 @@ def test_sed19():
                 '_type': 'step',
                 'address': 'local:tellurium_step',
                 'config': {
-                    'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+                    'sbml_model_path': 'demos/BIOMD0000000061_url.xml',
                 },
                 'wires': {
                     'inputs': {
@@ -112,7 +112,7 @@ def test_sed21():
                 '_type': 'step',
                 'address': 'local:tellurium_step',
                 'config': {
-                    'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+                    'sbml_model_path': 'demos/BIOMD0000000061_url.xml',
                 },
                 'wires': {
                     'inputs': {

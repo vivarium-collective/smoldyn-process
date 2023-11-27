@@ -1,7 +1,7 @@
 from smoldyn import Simulation
 
 
-model_fp = 'smoldyn_process/examples/model_files/crowding_model.txt'
+model_fp = 'smoldyn_process/models/model_files/crowding_model.txt'
 
 sim = Simulation.fromFile(model_fp)
 

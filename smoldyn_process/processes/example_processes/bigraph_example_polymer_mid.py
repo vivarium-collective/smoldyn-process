@@ -248,7 +248,7 @@ def test_process():
             '_type': 'process',
             'address': 'local:smoldyn_process',  # using a local toy process
             'config': {
-                'model_filepath': 'examples/model_files/polymer-mid_model.txt',
+                'model_filepath': 'models/model_files/polymer-mid_model.txt',
             },
             'wires': {
                 'time': ['time_store'],
@@ -302,7 +302,7 @@ def test_step():
             '_type': 'step',
             'address': 'local:tellurium_step',  # using a local toy process
             'config': {
-                'sbml_model_path': 'demo_processes/BIOMD0000000061_url.xml',
+                'sbml_model_path': 'demos/BIOMD0000000061_url.xml',
             },
             'wires': {
                 'inputs': {
@@ -526,7 +526,7 @@ def test_smoldyn_process(
 
 def test_load_file():
     parameters = {
-        'file': 'smoldyn_process/examples/template.txt'
+        'file': 'smoldyn_process/models/template.txt'
     }
     smoldyn = Smoldyn(parameters)
 

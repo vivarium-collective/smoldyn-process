@@ -222,7 +222,7 @@ def test_smoldyn_process(
 
 def test_load_file():
     parameters = {
-        'file': 'smoldyn_process/examples/template.txt'
+        'file': 'smoldyn_process/models/template.txt'
     }
     smoldyn = Smoldyn(parameters)
 

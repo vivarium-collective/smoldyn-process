@@ -1,7 +1,7 @@
 from smoldyn_process.utils import SmoldynModel
 
 
-model_fp = 'smoldyn_process/examples/model_files/minE_model.txt'
+model_fp = 'smoldyn_process/models/model_files/minE_model.txt'
 
 model = SmoldynModel(model_fp)
 

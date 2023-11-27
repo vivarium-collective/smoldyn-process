@@ -6,7 +6,7 @@ demos are according to this:
 """
 from sed2.old.sedbuilder import SEDBuilder
 
-MODEL_PATH = 'demo_processes/Caravagna2010.xml'
+MODEL_PATH = 'demos/Caravagna2010.xml'
 
 
 def test_builder():
@@ -17,7 +17,7 @@ def test_builder():
     sed.add_model(
         name='model1',
         type='sbml',
-        source='demo_processes/BIOMD0000000061_url.xml',  # TODO -- this should move the file into an archive
+        source='demos/BIOMD0000000061_url.xml',  # TODO -- this should move the file into an archive
     )
 
     # Set up the simulator

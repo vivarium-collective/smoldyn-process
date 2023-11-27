@@ -1,5 +1,5 @@
 """
-Smoldyn Process using the model found at `../examples/model_files/crowding_model.txt`
+Smoldyn Process using the model found at `../models/model_files/crowding_model.txt`
 """
 
 
@@ -128,7 +128,7 @@ def test_process():
             '_type': 'process',
             'address': 'local:smoldyn_process',
             'config': {
-                'model_filepath': 'smoldyn_process/examples/model_files/crowding_model.txt',
+                'model_filepath': 'smoldyn_process/models/model_files/crowding_model.txt',
                 'animate': False,
             },
             'wires': {
