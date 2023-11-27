@@ -62,9 +62,9 @@ surface_mol 250 red(up) ball sphere all
 surface_mol 5 green(up) ball sphere all
 
 #text_display time red(up) green(up)
-output_files FILEROOTout.txt
-cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
-cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
+#output_files FILEROOTout.txt
+#cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
+#cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
 
 
 end_file
