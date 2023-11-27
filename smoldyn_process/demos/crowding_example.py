@@ -73,7 +73,11 @@ class SmoldynProcess(Process):
             self.simulation.addGraphics('opengl_better')
 
     def initial_state(self) -> Dict[str, Dict]:
-        """Set the initial parameter state of the simulation. NOTE: Due to the nature of this model,
+        """Set the initial parameter state of the simulation. This method should return an implementation of
+            that which is returned by `self.schema()`.
+
+
+        NOTE: Due to the nature of this model,
             Smoldyn assigns a random uniform distribution of integers as the initial coordinate (x, y, z)
             values for the simulation. As such, the `set_uniform` method will uniformly distribute
             the molecules according to a `highpos`[x,y] and `lowpos`[x,y] where high and low pos are
@@ -191,7 +195,8 @@ class SmoldynProcess(Process):
 
         # uniformly reset the solution molecules based on the updated count for each molecule
         for species_name in self.species_names:
-            self.set_uniform(species_name, molecules[species_name])
+            spec_config = state['molecules'].get(species_name)
+            self.set_uniform(species_name, spec_config)
 
         return {'molecules': molecules}
 
@@ -212,7 +217,7 @@ def test_process():
                 'model_filepath': 'smoldyn_process/examples/model_files/crowding_model.txt',
                 'animate': False,
             },
-            'wires': {
+            'wires': {  # this should return that which is in the schema
                 'molecules': ['molecules_store'],
             }
         },
