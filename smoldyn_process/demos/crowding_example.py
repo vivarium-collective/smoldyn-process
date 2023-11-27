@@ -82,20 +82,12 @@ class SmoldynProcess(Process):
         """
 
         # TODO: update for distribution!
-        '''for spec in self.species:
-            molecule = self.config['molecules'].get(spec)
-            self.simulation.addMolecules(
-                species=spec,
-                number=molecule['count'],
-                pos=molecule['coordinates']
-            )'''
-
         species_dict = {}
         for name in self.species_names:
             species_dict[name] = {
                 'time': 0,
                 'count': 0,
-                'coordinates': None,
+                'coordinates': [],
             }
 
         # TODO: fill these with a default state with get initial mol state method
