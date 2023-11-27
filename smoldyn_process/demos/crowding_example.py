@@ -80,6 +80,7 @@ class SmoldynProcess(Process):
 
         # TODO: update for distribution!
         species_dict = {}
+
         for name in self.species_names:
             species_dict[name] = {
                 'time': 0,
@@ -105,10 +106,6 @@ class SmoldynProcess(Process):
                 name:`str`: name of the given molecule.
                 config:`Dict`: molecule state.
         """
-        # get the boundaries
-        low_bounds = self.boundaries[0]
-        high_bounds = self.boundaries[1]
-
         # kill the mol, effectively resetting it
         self.simulation.runCommand(f'killmol {name}')
 
@@ -116,8 +113,8 @@ class SmoldynProcess(Process):
         self.simulation.addSolutionMolecules(
             name,
             config['molecules'].get(name)['count'],
-            highpos=high_bounds,
-            lowpos=low_bounds
+            highpos=self.boundaries['high'],
+            lowpos=self.boundaries['low']
         )
 
     def schema(self) -> Dict:
