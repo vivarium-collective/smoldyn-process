@@ -1,3 +1,18 @@
+"""The output data returned by that which is required by simularium (executiontime, listmols),
+    when written and read into the same file is as follows:
+
+    [global_timestep, species_id, x, y, z, local_timestep], where:
+
+        global_timestep = global timestamp which will be equivalent to n in range(time_stop) which
+            increases according to dt
+        species_id = unique species id (based on simulation.count()['species'] value
+        x, y, z = values for the relative coordinates
+        local_timestep = monotonically decreasing timestamp for the given species_id
+
+
+"""
+
+
 from typing import *
 import numpy as np
 import smoldyn as sm
