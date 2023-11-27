@@ -70,7 +70,6 @@ class SmoldynProcess(Process):
         self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
         self.simulation.addOutputData('molecule_locations')
         self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
-        self.simulation.addSpecies()
 
         # get a list of the simulation species
         species_count = self.simulation.count()['species']
