@@ -244,7 +244,7 @@ def test_process():
             '_type': 'process',
             'address': 'local:smoldyn',
             'config': {
-                'model_filepath': 'smoldyn_process/examples/model_files/crowding_model.txt',
+                'model_filepath': 'smoldyn_process/models/model_files/crowding_model.txt',
                 'animate': False,
             },
             'wires': {  # this should return that which is in the schema
