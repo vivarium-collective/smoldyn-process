@@ -116,7 +116,7 @@ class SmoldynProcess(Process):
         for name in self.species_names:
             count = self.simulation.getMoleculeCount(name, MolecState.all)
             initial_conditions[name] = {
-                'time': 0,
+                'time': 0.0,
                 'count': count,
                 'coordinates': [],
             }
@@ -127,27 +127,30 @@ class SmoldynProcess(Process):
         }
         return state
 
-    def set_uniform(self, name: str, config: Dict[str, Any]) -> None:
+    def set_uniform(self, name: str, config: Dict[str, Any], kill_mol: bool = True) -> None:
         """Add a distribution of molecules to the solution in
             the simulation memory given a higher and lower bound x,y coordinate. Smoldyn assumes
-            a global boundary versus individual species boundaries.
+            a global boundary versus individual species boundaries. Kills the molecule before dist if true.
             TODO: If pymunk expands the species compartment, account for
             expanding `highpos` and `lowpos`. This method should be used within the body/logic of
-            the initial state and update class methods.
+            the `update` class method.
 
             Args:
                 name:`str`: name of the given molecule.
                 config:`Dict`: molecule state.
+                kill_mol:`bool`: kills the molecule based on the `name` argument, which effectively
+                    removes the molecule from simulation memory.
         """
         # kill the mol, effectively resetting it
-        self.simulation.runCommand(f'killmol {name}')
+        if kill_mol:
+            self.simulation.runCommand(f'killmol {name}')
 
         # redistribute the molecule according to the bounds
         self.simulation.addSolutionMolecules(
             name,
-            config['molecules'].get(name)['count'],
-            highpos=self.boundaries['high'],
-            lowpos=self.boundaries['low']
+            config['count'],
+            highpos=config['high'],
+            lowpos=config['low']
         )
 
     def schema(self) -> Dict:
@@ -160,7 +163,7 @@ class SmoldynProcess(Process):
         return {
             'molecules': {
                 mol_name: {
-                    'time': 'int',
+                    'time': 'float',
                     'count': 'int',  # derived from the molcount output command
                     'coordinates': list_type,
                     # 'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
@@ -171,24 +174,26 @@ class SmoldynProcess(Process):
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
-        """Callback method to be evoked at each Process interval.
+        """Callback method to be evoked at each Process interval. We want to get the
+            last of each dataset type as that is the relevant data in regard to the Process timescale scope.
 
             Args:
                 state:`Dict`: current state of the Smoldyn simulation, expressed as a `Dict` whose
                     schema matches that which is returned by the `self.schema()` API method.
-                interval:`int`: timestep interval at which to provide the update as the output
-                    of this method. NOTE: This update is iteratively called with the `Process` API.
+                interval:`int`: Analogous to Smoldyn's `time_stop`, this is the
+                    timestep interval at which to provide the update as the output of this method.
+                    NOTE: This update is iteratively called with the `Process` API.
 
             Returns:
                 `Dict`: New state according to the update at interval
         """
-
-        # get the molecule configs
-        molecules = state['molecules']
-
-        # distribute the mols according to self.boundaries
-        for mol_name, mol_state in molecules.items():
-            self.set_uniform(mol_name, mol_state)
+        # reset the molecules, distribute the mols according to self.boundaries
+        for mol_name, mol_state in state['molecules'].items():
+            self.set_uniform(mol_name, {
+                'count': mol_name['count'],
+                'high': self.boundaries['high'],
+                'low': self.boundaries['low']
+            })
 
         # run the simulation for a given interval
         self.simulation.run(
@@ -207,20 +212,21 @@ class SmoldynProcess(Process):
 
         # get the final counts for the update
         final_time = time_data[-1]
-        final_counts = counts_data[-1]
-        final_locations = location_data[-1]
+        final_count = counts_data[-1]
+        final_location = location_data[-1]
         molecules = {}
         for index, name in enumerate(self.species_names, 1):
             molecules[name] = {
-                'time': final_time,
-                'count': int(final_counts[index]) - state['molecules'][name],
-                'coordinates': final_locations
+                'time': int(final_time[index]) - state['molecules'][name],
+                'count': int(final_count[index]) - state['molecules'][name],
+                'coordinates': final_location
             }
 
         # uniformly reset the solution molecules based on the updated count for each molecule
-        for species_name in self.species_names:
-            spec_config = state['molecules'].get(species_name)
-            self.set_uniform(species_name, spec_config)
+        for mol_name, mol_state in state['molecules'].items():
+            self.set_uniform(mol_name, mol_state)
+
+        # TODO -- post processing to get effective rates
 
         return {'molecules': molecules}
 
