@@ -258,19 +258,13 @@ def test_process():
             'config': {
                 'ports': {
                     'inputs': {
-                        'molecules': 'dict'
+                        'molecules': 'tree[string]'
                     },
-                    'outputs': {
-                        'molecules': 'dict'
-                    }
                 }
             },
             'wires': {
                 'inputs': {
                     'molecules': ['molecules_store'],
-                },
-                'outputs': {
-                    'molecules': ['molecules_store']
                 }
             }
         }
