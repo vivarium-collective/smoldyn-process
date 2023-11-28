@@ -222,7 +222,7 @@ class SmoldynProcess(Process):
         molecules = {}
         for index, name in enumerate(self.species_names, 1):
             molecules[name] = {
-                'time': int(final_time[index]) - state['molecules'][name],
+                'time': float(final_time[index]) - state['molecules'][name],
                 'count': int(final_count[index]) - state['molecules'][name],
                 'coordinates': final_location
             }
@@ -259,12 +259,18 @@ def test_process():
                 'ports': {
                     'inputs': {
                         'molecules': 'dict'
+                    },
+                    'outputs': {
+                        'molecules': 'dict'
                     }
                 }
             },
             'wires': {
                 'inputs': {
                     'molecules': ['molecules_store'],
+                },
+                'outputs': {
+                    'molecules': ['molecules_store']
                 }
             }
         }
