@@ -195,7 +195,7 @@ class SmoldynProcess(Process):
         # reset the molecules, distribute the mols according to self.boundaries
         for mol_name, mol_state in state['molecules'].items():
             self.set_uniform(mol_name, {
-                'count': mol_name['count'],
+                'count': mol_state['count'],
                 'high': self.boundaries['high'],
                 'low': self.boundaries['low']
             })
