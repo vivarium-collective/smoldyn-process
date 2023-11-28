@@ -68,7 +68,8 @@ class SmoldynProcess(Process):
         self.species_names: List[str] = []
         for index in range(species_count):
             species_name = self.simulation.getSpeciesName(index)
-            self.species_names.append(species_name)
+            if 'empty' not in species_name.lower():
+                self.species_names.append(species_name)
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
@@ -111,15 +112,13 @@ class SmoldynProcess(Process):
         """
 
         # TODO: update for distribution!
-        initial_conditions = {}
-
-        for name in self.species_names:
-            count = self.simulation.getMoleculeCount(name, MolecState.all)
-            initial_conditions[name] = {
+        initial_conditions = {
+            mol_name: {
                 'time': 0.0,
-                'count': count,
-                'coordinates': [],
-            }
+                'count': self.simulation.getMoleculeCount(mol_name, MolecState.all),
+                'coordinates': [0.0 for _ in range(6)]
+            } for mol_name in self.species_names
+        }
 
         # TODO: fill these with a default state with get initial mol state method
         state = {
@@ -158,19 +157,25 @@ class SmoldynProcess(Process):
             runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
             are specified alongside molecules.
         """
-        tuple_type = {'_type': 'tuple', '_apply': 'set'}
-        list_type = {'_type': 'list', '_apply': 'set'}
+        list_type = {
+            species_name: {
+                '_type': 'float',
+                '_apply': 'set',
+            }
+            for species_name in self.species_names
+        }
         return {
             'molecules': {
                 mol_name: {
                     'time': 'float',
                     'count': 'int',  # derived from the molcount output command
-                    'coordinates': list_type,
+                    'coordinates': 'list',
                     # 'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
                     # 'mol_type': 'string',
                     # 'state': 'string'
                 } for mol_name in self.species_names
-            }
+            },
+            #'global_time': 'float'
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -221,10 +226,6 @@ class SmoldynProcess(Process):
                 'count': int(final_count[index]) - state['molecules'][name],
                 'coordinates': final_location
             }
-
-        # uniformly reset the solution molecules based on the updated count for each molecule
-        for mol_name, mol_state in state['molecules'].items():
-            self.set_uniform(mol_name, mol_state)
 
         # TODO -- post processing to get effective rates
 
