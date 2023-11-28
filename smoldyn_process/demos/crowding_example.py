@@ -63,14 +63,6 @@ class SmoldynProcess(Process):
         # initialize the simulator from a Smoldyn model.txt file.
         self.simulation: sm.Simulation = sm.Simulation.fromFile(self.model_filepath)
 
-        # add the relevant output files and commands required for the update
-        self.simulation.addOutputData('time')
-        self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
-        self.simulation.addOutputData('molecule_counts')
-        self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
-        self.simulation.addOutputData('molecule_locations')
-        self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
-
         # get a list of the simulation species
         species_count = self.simulation.count()['species']
         self.species_names: List[str] = []
@@ -85,6 +77,24 @@ class SmoldynProcess(Process):
         # set graphics (defaults to False)
         if self.config['animate']:
             self.simulation.addGraphics('opengl_better')
+
+        # add the relevant output datasets and commands required for the update
+        # make time dataset
+        self.simulation.addOutputData('time')
+        # write executiontime to time dataset at every timestep
+        self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
+
+        # make molecule counts dataset
+        self.simulation.addOutputData('molecule_counts')
+        # write molcount header to counts dataset at start of simulation
+        self.simulation.addCommand(cmd='molcountheader molecule_counts', cmd_type='B')
+        # write molcounts to counts dataset at every timestep
+        self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
+
+        # make coordinates dataset
+        self.simulation.addOutputData('molecule_locations')
+        # write coords to dataset at every timestep
+        self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
 
     def initial_state(self) -> Dict[str, Dict]:
         """Set the initial parameter state of the simulation. This method should return an implementation of
