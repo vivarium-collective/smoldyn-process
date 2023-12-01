@@ -1,13 +1,12 @@
 """The output data returned by that which is required by simularium (executiontime, listmols),
     when written and read into the same file is as follows:
 
-    [global_timestep, species_id, x, y, z, local_timestep], where:
+    [identity, state, x, y, z, serial number], where:
 
-        global_timestep = global timestamp which will be equivalent to n in range(time_stop) which
-            increases according to dt
-        species_id = unique species id (based on simulation.count()['species'] value
+        identity = species identity for molecule
+        state = state of the given molecule
         x, y, z = values for the relative coordinates
-        local_timestep = monotonically decreasing timestamp for the given species_id
+        serial_number = monotonically decreasing timestamp for the given species_id
 
 
 """
@@ -114,11 +113,12 @@ class SmoldynProcess(Process):
         # TODO: update for distribution!
         initial_conditions = {
             mol_name: {
-                'time': 0.0,
                 'count': self.simulation.getMoleculeCount(mol_name, MolecState.all),
                 'coordinates': [0.0 for _ in range(6)]
             } for mol_name in self.species_names
         }
+
+        # place uniform and then getOUtputData
 
         # TODO: fill these with a default state with get initial mol state method
         state = {
@@ -164,14 +164,24 @@ class SmoldynProcess(Process):
             }
             for species_name in self.species_names
         }
+        """
+        { 
+            'species_counts': {
+                id: int
+            }
+            
+            'particles': {
+               molId : {
+                  coords: list[float]
+                  species: string (red or green)
+        """
         return {
             'molecules': {
                 mol_name: {
-                    'time': 'float',
                     'count': 'int',  # derived from the molcount output command
-                    'coordinates': 'list',
+                    'coordinates': 'list[float]',
                     # 'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
-                    # 'mol_type': 'string',
+                    'mol_type': 'string',
                     # 'state': 'string'
                 } for mol_name in self.species_names
             },
@@ -193,7 +203,7 @@ class SmoldynProcess(Process):
                 `Dict`: New state according to the update at interval
         """
         # reset the molecules, distribute the mols according to self.boundaries
-        for mol_name, mol_state in state['molecules'].items():
+        for mol_name, mol_state in state['molecules'].items():  # change term here
             self.set_uniform(mol_name, {
                 'count': mol_state['count'],
                 'high': self.boundaries['high'],
@@ -206,9 +216,6 @@ class SmoldynProcess(Process):
             dt=self.simulation.dt
         )
 
-        # get the time data, clear the buffer
-        time_data = self.simulation.getOutputData('time', True)
-
         # get the counts data, clear the buffer
         counts_data = self.simulation.getOutputData('molecule_counts', True)
 
@@ -216,13 +223,11 @@ class SmoldynProcess(Process):
         location_data = self.simulation.getOutputData('molecule_locations', True)
 
         # get the final counts for the update
-        final_time = time_data[-1]
         final_count = counts_data[-1]
         final_location = location_data[-1]
         molecules = {}
         for index, name in enumerate(self.species_names, 1):
             molecules[name] = {
-                'time': float(final_time[index]) - state['molecules'][name],
                 'count': int(final_count[index]) - state['molecules'][name],
                 'coordinates': final_location
             }
