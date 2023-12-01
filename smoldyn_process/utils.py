@@ -1,6 +1,7 @@
 import os
 from typing import *
 from abc import ABC, abstractmethod
+import pandas as pd
 import smoldyn as sm
 from biosimulators_simularium.converters.utils import validate_model
 
@@ -145,6 +146,11 @@ def get_reactions(model_fp: str):
             reaction_spec['prds'].append(prds)
             _reactions[reaction_name] = reaction_spec
     return _reactions
+
+
+def create_listmol_dataframe(values: List[List[float]]) -> pd.DataFrame:
+    cols = ['species_id', 'state', 'x', 'y', 'z', 'serial_number']
+    return pd.DataFrame(data=values, columns=cols)
 
 
 class ProcessModel(ABC):
