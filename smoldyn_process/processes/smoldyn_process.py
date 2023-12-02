@@ -80,9 +80,9 @@ class SmoldynProcess(Process):
 
         # add the relevant output datasets and commands required for the update
         # make time dataset (expects shape=(t, rT) where t=timestep in simulation and rT=real amount of time that passed since prev t
-        self.simulation.addOutputData('time')
+        # self.simulation.addOutputData('time')
         # write executiontime to time dataset at every timestep
-        self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
+        # self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
 
         # make molecule counts dataset (expects shape=(t+1, 1+n) where t=number of timesteps + 1 and n=number of species + 1)
         self.simulation.addOutputData('molecule_counts')
