@@ -148,7 +148,7 @@ def get_reactions(model_fp: str):
     return _reactions
 
 
-def create_listmol_dataframe(values: List[List[float]]) -> pd.DataFrame:
+def create_listmols_dataframe(values: List[List[float]]) -> pd.DataFrame:
     cols = ['species_id', 'state', 'x', 'y', 'z', 'serial_number']
     return pd.DataFrame(data=values, columns=cols)
 
