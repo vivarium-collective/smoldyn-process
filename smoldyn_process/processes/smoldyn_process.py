@@ -239,3 +239,54 @@ class SmoldynProcess(Process):
 
 # register the process above as the name passed in the first argument below
 process_registry.register('smoldyn', SmoldynProcess)
+
+
+def test_process():
+    """Test the smoldyn process using the crowding model."""
+
+    # this is the instance for the composite process to run
+    instance = {
+        'smoldyn': {
+            '_type': 'process',
+            'address': 'local:smoldyn',
+            'config': {
+                'model_filepath': 'smoldyn_process/models/model_files/crowding_model.txt',
+                'animate': False,
+            },
+            'wires': {  # this should return that which is in the schema
+                'molecules': ['molecules_store'],
+            }
+        },
+        'emitter': {
+            '_type': 'step',
+            'address': 'local:ram-emitter',
+            'config': {
+                'ports': {
+                    'inputs': {
+                        'molecules': 'tree[string]'
+                    },
+                }
+            },
+            'wires': {
+                'inputs': {
+                    'molecules': ['molecules_store'],
+                }
+            }
+        }
+    }
+
+    # make the composite
+    workflow = Composite({
+        'state': instance
+    })
+
+    # run
+    workflow.run(10)
+
+    # gather results
+    results = workflow.gather_results()
+    print(f'RESULTS: {pf(results)}')
+
+
+if __name__ == '__main__':
+    test_process()
