@@ -87,7 +87,7 @@ class SmoldynProcess(Process):
         # make molecule counts dataset (expects shape=(t+1, 1+n) where t=number of timesteps + 1 and n=number of species + 1)
         self.simulation.addOutputData('molecule_counts')
         # write molcount header to counts dataset at start of simulation
-        self.simulation.addCommand(cmd='molcountheader molecule_counts', cmd_type='B')
+        #self.simulation.addCommand(cmd='molcountheader molecule_counts', cmd_type='B')
         # write molcounts to counts dataset at every timestep
         self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
 
@@ -95,6 +95,9 @@ class SmoldynProcess(Process):
         self.simulation.addOutputData('molecule_locations')
         # write coords to dataset at every timestep
         self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
+
+        # set molecule ids to none, as they are not available until after the simulation runs
+        self.molecule_ids: List[str] = []
 
     def initial_state(self) -> Dict[str, Dict]:
         """Set the initial parameter state of the simulation. This method should return an implementation of
@@ -156,18 +159,25 @@ class SmoldynProcess(Process):
         """Return a dictionary of molecule names and the expected input/output schema at simulation
             runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
             are specified alongside molecules.
+
+            PLEASE NOTE: the key 'counts' refers to the count of molecules for each molecular species. The number of
+                species_types in this regard does not change, even if that number drops to 0.
         """
-        list_type = {
-            species_name: {
-                '_type': 'float',
-                '_apply': 'set',
-            }
+        counts_type = {
+            species_name: 'list[float]'
             for species_name in self.species_names
+        }
+
+        molecules_type = {
+            mol_id: {
+                'coordinates': 'list[float]',
+                'species_id': 'string'
+            } for mol_id in self.molecule_ids
         }
         """
         { 
-            'species_counts': {
-                id: int
+            'counts': {
+                spec_id: int
             }
 
             'particles': {
@@ -175,17 +185,10 @@ class SmoldynProcess(Process):
                   coords: list[float]
                   species: string (red or green)
         """
+        # TODO: include velocity and state to this schema (add to constructor as well)
         return {
-            'molecules': {
-                mol_name: {
-                    'count': 'int',  # derived from the molcount output command
-                    'coordinates': 'list[float]',
-                    # 'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
-                    'mol_type': 'string',
-                    # 'state': 'string'
-                } for mol_name in self.species_names
-            },
-            # 'global_time': 'float'
+            'counts': counts_type,
+            'molecules': molecules_type
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -221,6 +224,9 @@ class SmoldynProcess(Process):
 
         # get the data based on the commands added in the constructor, clear the buffer
         location_data = self.simulation.getOutputData('molecule_locations', True)
+
+        for molecule_index in range(len(location_data)):
+            self.molecule_ids.append(str(molecule_index))
 
         # get the final counts for the update
         final_count = counts_data[-1]
