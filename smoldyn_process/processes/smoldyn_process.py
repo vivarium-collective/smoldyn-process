@@ -79,19 +79,19 @@ class SmoldynProcess(Process):
             self.simulation.addGraphics('opengl_better')
 
         # add the relevant output datasets and commands required for the update
-        # make time dataset
+        # make time dataset (expects shape=(t, rT) where t=timestep in simulation and rT=real amount of time that passed since prev t
         self.simulation.addOutputData('time')
         # write executiontime to time dataset at every timestep
         self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
 
-        # make molecule counts dataset
+        # make molecule counts dataset (expects shape=(t+1, 1+n) where t=number of timesteps + 1 and n=number of species + 1)
         self.simulation.addOutputData('molecule_counts')
         # write molcount header to counts dataset at start of simulation
         self.simulation.addCommand(cmd='molcountheader molecule_counts', cmd_type='B')
         # write molcounts to counts dataset at every timestep
         self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
 
-        # make coordinates dataset
+        # make coordinates dataset (expects shape=(n, 6) where n=number of molecules recorded and 6 is specid, state, x,y,z, serialnum
         self.simulation.addOutputData('molecule_locations')
         # write coords to dataset at every timestep
         self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')

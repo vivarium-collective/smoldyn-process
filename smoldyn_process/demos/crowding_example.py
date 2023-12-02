@@ -46,10 +46,16 @@ class SmoldynProcess(Process):
 
     config_schema = {
         'model_filepath': 'string',
-        'animate': 'boolean',
+        'animate': 'bool',
     }
 
     def __init__(self, config: Dict = None):
+        """This Process emits the following key data from evoked Smoldyn output commands:
+
+            molecule_counts: the result of `molcount` and `molcountheader`
+            molecule_locations: the result of `listmols`
+
+        """
         super().__init__(config)
 
         # specify the model fp for clarity
@@ -80,9 +86,9 @@ class SmoldynProcess(Process):
 
         # add the relevant output datasets and commands required for the update
         # make time dataset
-        self.simulation.addOutputData('time')
+        # self.simulation.addOutputData('time')
         # write executiontime to time dataset at every timestep
-        self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
+        # self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
 
         # make molecule counts dataset
         self.simulation.addOutputData('molecule_counts')
