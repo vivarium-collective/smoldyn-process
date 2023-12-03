@@ -107,9 +107,9 @@ endif
 compartment_mol NUMBER_MINE MinE cell
 
 
-output_files FILEROOTout.txt
+#output_files FILEROOTout.txt
 #cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
-cmd i 0 TIME_STOP 2 listmols3 MinE FILEROOTout.txt
+#cmd i 0 TIME_STOP 2 listmols3 MinE FILEROOTout.txt
 #cmd i 0 TIME_STOP 10 savesim FILEROOTout.txt
 #cmd i 0 TIME_STOP 2 molmoments MinD_ATP(front) FILEROOTout.txt
 
