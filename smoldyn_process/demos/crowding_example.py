@@ -181,7 +181,7 @@ class SmoldynProcess(Process):
                   species: string (red or green)
         """
         return {
-            'species_counts': species_counts_type, # derived from the molcount output command
+            'species_counts': species_counts_type,  # derived from the molcount output command
             'molecules': {
                 mol_name: {
                     'count': 'int',

@@ -3,8 +3,8 @@
 # This file is HMW system exactly, plus surface diffusion
 # units are micron, second
 
-define D_D		2.5	# MinD diffusion coefficient (um^2/s)
-define D_E		2.5	# MinE diffusion coefficient (um^2/s)
+define D_D		2.5	   # MinD diffusion coefficient (um^2/s)
+define D_E		2.5	   # MinE diffusion coefficient (um^2/s)
 define D_d		0.01	# MinD_ATP(front) diff. coeff. (um^2/s)
 define D_de		0.01	# MinDMinE(front) diff. coeff. (um^2/s)
 define SIGMA_D_D2T	1	# MinD phosphorylation rate (s^-1)
@@ -108,8 +108,8 @@ compartment_mol NUMBER_MINE MinE cell
 
 
 output_files FILEROOTout.txt
-cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
-cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
+#cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
+cmd i 0 TIME_STOP 2 listmols3 MinE FILEROOTout.txt
 #cmd i 0 TIME_STOP 10 savesim FILEROOTout.txt
 #cmd i 0 TIME_STOP 2 molmoments MinD_ATP(front) FILEROOTout.txt
 

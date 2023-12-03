@@ -163,6 +163,8 @@ class SmoldynProcess(Process):
             PLEASE NOTE: the key 'counts' refers to the count of molecules for each molecular species. The number of
                 species_types in this regard does not change, even if that number drops to 0.
         """
+
+        # TODO: Include listmols3 spec for spec in self.species_names
         counts_type = {
             species_name: 'list[float]'
             for species_name in self.species_names
