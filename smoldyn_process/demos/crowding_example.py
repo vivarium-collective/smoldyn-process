@@ -202,6 +202,11 @@ class SmoldynProcess(Process):
 
             Returns:
                 `Dict`: New state according to the update at interval
+
+            PLEASE NOTE: The following outputs can be derived as such:
+                - The molecule coordinates can be found from listmols[2:4]
+                - The molecule state can be found from listmols[1]
+                - The molecule identity can be found from listmols[0]
         """
         # reset the molecules, distribute the mols according to self.boundaries
         for mol_name, mol_state in state['molecules'].items():  # change term here
@@ -221,16 +226,29 @@ class SmoldynProcess(Process):
         counts_data = self.simulation.getOutputData('molecule_counts', True)
 
         # get the data based on the commands added in the constructor, clear the buffer
-        location_data = self.simulation.getOutputData('molecule_locations', True)
+        molecule_data = self.simulation.getOutputData('molecule_locations', True)
+
+        # get the state of the given molecule from the location data
 
         # get the final counts for the update
         final_count = counts_data[-1]
-        final_location = location_data[-1]
+        coordinates = molecule_data[2:5]
         molecules = {}
-        for index, name in enumerate(self.species_names, 1):
+        '''for index, name in enumerate(self.species_names, 1):
             molecules[name] = {
                 'count': int(final_count[index]) - state['molecules'][name],
                 'coordinates': final_location
+            }'''
+
+        molecules = {}
+        for i, mol in enumerate(molecule_data):
+            id = mol[0]
+            state = mol[1]
+            coordinates = mol[2:5]
+            molecules[str(i)] = {
+                'mol_type': id,
+                'state': state,
+                'coordinates': coordinates
             }
 
         # TODO -- post processing to get effective rates
