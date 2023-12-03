@@ -165,6 +165,10 @@ class SmoldynProcess(Process):
             runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
             are specified alongside molecules.
         """
+        species_counts_type = {
+            name: 'float'
+            for name in self.species_names
+        }
         """
         { 
             'species_counts': {
@@ -177,13 +181,12 @@ class SmoldynProcess(Process):
                   species: string (red or green)
         """
         return {
+            'species_counts': species_counts_type, # derived from the molcount output command
             'molecules': {
                 mol_name: {
-                    'count': 'int',  # derived from the molcount output command
+                    'count': 'int',
                     'coordinates': 'list[float]',
-                    # 'velocity': tuple_type,  # QUESTION: could the expected shape be: ((0,0), (1,4)) where: ((xStart, xStop), (yStart, yStop)) ie directional?
-                    'mol_type': 'string',
-                    # 'state': 'string'
+                    'state': 'string'
                 } for mol_name in self.species_names
             },
             # 'global_time': 'float'
