@@ -102,6 +102,7 @@ class SmoldynProcess(Process):
         # write coords to dataset at every timestep
         self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
 
+
     def initial_state(self) -> Dict[str, Dict]:
         """Set the initial parameter state of the simulation. This method should return an implementation of
             that which is returned by `self.schema()`.
@@ -120,7 +121,8 @@ class SmoldynProcess(Process):
         initial_conditions = {
             mol_name: {
                 'count': self.simulation.getMoleculeCount(mol_name, MolecState.all),
-                'coordinates': [0.0 for _ in range(6)]
+                'coordinates': [],
+                'mol_species': mol_name
             } for mol_name in self.species_names
         }
 
@@ -163,13 +165,6 @@ class SmoldynProcess(Process):
             runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
             are specified alongside molecules.
         """
-        list_type = {
-            species_name: {
-                '_type': 'float',
-                '_apply': 'set',
-            }
-            for species_name in self.species_names
-        }
         """
         { 
             'species_counts': {
