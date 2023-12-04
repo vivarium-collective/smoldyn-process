@@ -1,6 +1,6 @@
 from smoldyn import Simulation
 import json
-from smoldyn_process.utils import get_output_molecule_ids
+from smoldyn_process.utils import get_output_molecule_ids, read_model_file_as_list
 
 
 model_fp = 'smoldyn_process/models/model_files/minE_model.txt'
@@ -11,25 +11,22 @@ sim = Simulation.fromFile(model_fp)
 species_names = [sim.getSpeciesName(index) for index in range(sim.count()['species'])]
 species_names.remove('empty')
 
-stop = 2
-sim.addOutputData('time')
-sim.addCommand(cmd='executiontime time', cmd_type='i', on=0, off=stop, step=2)
-sim.addCommand(cmd='listmols time', cmd_type='i', on=0, off=stop, step=2)
+
 sim.addOutputData('mols')
-sim.addCommand(cmd='listmols mols', cmd_type='i', on=0, off=stop, step=2)
-sim.run(stop, 1)
-data = sim.getOutputData('time')
+sim.addCommand(cmd=f'listmols2 mols', cmd_type='E')
+sim.run(1, 1)
+
 mols = sim.getOutputData('mols')
 
-species_id = [mol[0] for mol in data]
-unique_ids = list(set(species_id))
-serials = [mol[-1] for mol in data]
-unique_serials = list(set(serials))
-print(len(serials), len(unique_serials))
+
+
+
+
+'''print(len(serials), len(unique_serials))
 print(unique_ids)
 print(len(species_id), len(unique_ids))
 
-print(len(data), len(mols))
+print(len(data), len(mols))'''
 
 
 '''unique_mol_ids = get_output_molecule_ids(modelout_fp)
@@ -37,7 +34,6 @@ all_mol_ids = get_output_molecule_ids(modelout_fp, unique=False)
 
 print(f'Unique ids:\n{unique_mol_ids}')
 print(f'spec names:\n{species_names}')'''
-
 sim.runSim()
 
 #sim.addOutputData('molecules')

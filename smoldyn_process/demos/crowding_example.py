@@ -55,8 +55,8 @@ class SmoldynProcess(Process):
     def __init__(self, config: Dict = None):
         """This Process emits the following key data from evoked Smoldyn output commands:
 
-            molecule_counts: the result of `molcount` and `molcountheader`
-            molecule_locations: the result of `listmols`
+            species_counts: the result of `molcount` -> [[t, *molecule_count_for_species], ...] shape=(Nt, n_species)
+            molecules: the result of `listmols` -> [[mol_species_id, mol_state, mol_x, mol_y, mol_z, mol_serial_num], ...]
 
         """
         super().__init__(config)
@@ -79,7 +79,7 @@ class SmoldynProcess(Process):
             if 'empty' not in species_name.lower():
                 self.species_names.append(species_name)
 
-        # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
+        # get the simulation boundaries for uniform dist, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
         self.boundaries: Dict[str, List[float]] = dict(zip(['low', 'high'], self.simulation.getBoundaries()))
 
@@ -87,21 +87,15 @@ class SmoldynProcess(Process):
         if self.config['animate']:
             self.simulation.addGraphics('opengl_better')
 
-        # add the relevant output datasets and commands required for the update
-        # make time dataset
-        # self.simulation.addOutputData('time')
-        # write executiontime to time dataset at every timestep
-        # self.simulation.addCommand(cmd='executiontime time', cmd_type='E')
-
         # make molecule counts dataset
-        self.simulation.addOutputData('molecule_counts')
+        self.simulation.addOutputData('species_counts')
         # write molcounts to counts dataset at every timestep (shape=(n_timesteps, 1+n_species <-- one for time)): [timestep, countSpec1, countSpec2, ...]
-        self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
+        self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
 
         # make coordinates dataset
-        self.simulation.addOutputData('molecule_locations')
+        self.simulation.addOutputData('molecules')
         # write coords to dataset at every timestep (shape=(n_output_molecules, 6)): six being [mol_id(species), mol_state, x, y, z, mol_serial_num]
-        self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
+        self.simulation.addCommand(cmd='listmols molecules', cmd_type='E')
 
 
     def initial_state(self) -> Dict[str, Dict]:
