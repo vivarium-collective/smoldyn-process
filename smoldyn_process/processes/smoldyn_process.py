@@ -223,7 +223,7 @@ class SmoldynProcess(Process):
 
         # TODO: Include listmols3 spec for spec in self.species_names
         counts_type = {
-            species_name: 'list[float]'
+            species_name: 'float'
             for species_name in self.species_names
         }
 
@@ -246,7 +246,7 @@ class SmoldynProcess(Process):
         """
         # TODO: include velocity and state to this schema (add to constructor as well)
         return {
-            'counts': counts_type,
+            'species_counts': counts_type,
             'molecules': molecules_type
         }
 
@@ -283,23 +283,33 @@ class SmoldynProcess(Process):
         )
 
         # get the counts data, clear the buffer
-        counts_data = self.simulation.getOutputData('molecule_counts', True)
+        counts_data = self.simulation.getOutputData('species_counts')
 
         # get the data based on the commands added in the constructor, clear the buffer
-        location_data = self.simulation.getOutputData('molecule_locations', True)
+        molecules_data = self.simulation.getOutputData('molecules')
 
-        for molecule_index in range(len(location_data)):
-            self.molecule_ids.append(str(molecule_index))
+        # update the list of known molecule ids
+        for molecule in molecules_data:
+            self.molecule_ids.append(str(molecule[1]))
 
         # get the final counts for the update
         final_count = counts_data[-1]
-        final_location = location_data[-1]
-        molecules = {}
-        for index, name in enumerate(self.species_names, 1):
-            molecules[name] = {
-                'count': int(final_count[index]) - state['molecules'][name],
-                'coordinates': final_location
+
+        # remove the timestep from the list
+        final_count.pop(0)
+
+        simulation_state = {
+            'species_counts': {},
+            'molecules': {}
+        }
+        for index, name in enumerate(self.species_names):
+            simulation_state['species_counts'][name] = {
+                name: int(final_count[index]) - state['species_counts'][name]
             }
+            '''molecules[name] = {
+                'count': int(final_count[index]) - state['species_counts'][name],
+                'coordinates': final_location
+            }'''
 
         # TODO -- post processing to get effective rates
 
