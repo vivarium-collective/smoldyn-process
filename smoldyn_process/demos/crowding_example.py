@@ -350,8 +350,8 @@ def test_process():
             'config': {
                 'ports': {
                     'inputs': {
-                        'species_counts': 'tree[string]',
-                        'molecules': 'tree[string]'
+                        'species_counts': 'tree',
+                        'molecules': 'tree'
                     },
                 }
             },
