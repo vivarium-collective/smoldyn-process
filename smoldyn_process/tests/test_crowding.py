@@ -23,17 +23,31 @@ species_names = ['MinE']
 
 
 for spec in species_names:
-    dataname = f'molPos_{spec}'
-    sim.addOutputData(dataname)
-    sim.addCommand(f'molpos {spec} {dataname}')
+    dataname = spec
+    listmols_dataname = dataname + '_molecule_list'
+    counts_dataname = dataname + '_counts'
+    sim.addOutputData(listmols_dataname)
+    sim.addOutputData(counts_dataname)
+
+    # listmols for each spec (coords)
+    sim.addCommand(f'listmols3 {spec} {listmols_dataname}', cmd_type='E')
+
+    # get counts for each spec
+    sim.addCommand(f'molcount {spec} {counts_dataname}')
 
 sim.run(1, 1)
 
 pos_data = {}
 for spec in species_names:
-    dataname = f'molPos_{spec}'
-    data = sim.getOutputData(dataname)
-    pos_data[spec] = data
+    dataname = spec
+    listmols_dataname = dataname + '_molecule_list'
+    counts_dataname = dataname + '_counts'
+    listmols_data = sim.getOutputData(listmols_dataname)
+    counts_data = sim.getOutputData(counts_dataname)
+    pos_data[spec] = {
+        'counts': counts_data,
+        'mol_data': listmols_data
+    }
 
 
 with open('outputs.json', 'w') as f:
