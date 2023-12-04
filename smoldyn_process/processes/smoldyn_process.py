@@ -156,6 +156,32 @@ class SmoldynProcess(Process):
         # set molecule ids to none, as they are not available until after the simulation runs
         self.molecule_ids: List[str] = []
 
+    def set_uniform(self, species_name: str, config: Dict[str, Any], kill_mol: bool = True) -> None:
+        """Add a distribution of molecules to the solution in
+            the simulation memory given a higher and lower bound x,y coordinate. Smoldyn assumes
+            a global boundary versus individual species boundaries. Kills the molecule before dist if true.
+            TODO: If pymunk expands the species compartment, account for
+            expanding `highpos` and `lowpos`. This method should be used within the body/logic of
+            the `update` class method.
+
+            Args:
+                species_name:`str`: name of the given molecule.
+                config:`Dict`: molecule state.
+                kill_mol:`bool`: kills the molecule based on the `name` argument, which effectively
+                    removes the molecule from simulation memory.
+        """
+        # kill the mol, effectively resetting it
+        if kill_mol:
+            self.simulation.runCommand(f'killmol {species_name}')
+
+        # redistribute the molecule according to the bounds
+        self.simulation.addSolutionMolecules(
+            species=species_name,
+            number=config['count'],
+            highpos=config['high'],
+            lowpos=config['low']
+        )
+
     def initial_state(self) -> Dict[str, Dict]:
         """Set the initial parameter state of the simulation. This method should return an implementation of
             that which is returned by `self.schema()`.
@@ -185,32 +211,6 @@ class SmoldynProcess(Process):
             'molecules': initial_conditions
         }
         return state
-
-    def set_uniform(self, species_name: str, config: Dict[str, Any], kill_mol: bool = True) -> None:
-        """Add a distribution of molecules to the solution in
-            the simulation memory given a higher and lower bound x,y coordinate. Smoldyn assumes
-            a global boundary versus individual species boundaries. Kills the molecule before dist if true.
-            TODO: If pymunk expands the species compartment, account for
-            expanding `highpos` and `lowpos`. This method should be used within the body/logic of
-            the `update` class method.
-
-            Args:
-                species_name:`str`: name of the given molecule.
-                config:`Dict`: molecule state.
-                kill_mol:`bool`: kills the molecule based on the `name` argument, which effectively
-                    removes the molecule from simulation memory.
-        """
-        # kill the mol, effectively resetting it
-        if kill_mol:
-            self.simulation.runCommand(f'killmol {species_name}')
-
-        # redistribute the molecule according to the bounds
-        self.simulation.addSolutionMolecules(
-            species=species_name,
-            number=config['count'],
-            highpos=config['high'],
-            lowpos=config['low']
-        )
 
     def schema(self) -> Dict:
         """Return a dictionary of molecule names and the expected input/output schema at simulation
