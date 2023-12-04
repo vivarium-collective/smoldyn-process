@@ -99,7 +99,7 @@ class SmoldynProcess(Process):
         'animate': 'bool',
     }
 
-    def __init__(self, config: Dict = None):
+    def __init__(self, config: Dict[str, Any] = None):
         """A new instance of `SmoldynProcess` based on the `config` that is passed. The schema for the config to be passed in
             this object's constructor is as follows:
 
@@ -151,7 +151,7 @@ class SmoldynProcess(Process):
         # make molecules dataset (molecule information)
         self.simulation.addOutputData('molecules')
         # write coords to dataset at every timestep (shape=(n_output_molecules, 7)): seven being [timestep, smol_id(species), mol_state, x, y, z, mol_serial_num]
-        self.simulation.addCommand(cmd='listmols molecules', cmd_type='E')
+        self.simulation.addCommand(cmd='listmols2 molecules', cmd_type='E')
 
         # set molecule ids to none, as they are not available until after the simulation runs
         self.molecule_ids: List[str] = []
