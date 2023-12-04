@@ -8,6 +8,10 @@
         x, y, z = values for the relative coordinates
         serial_number = monotonically decreasing timestamp for the given species_id
 
+        At each global timestep (`executiontime`), a new 'cast of characters' are introduced that may resemble the
+            cast of characters at the first timestep, but are in fact different and thus all the molecules provided
+            from the `listmols` command will in fact all be unique.
+
 
     I propose the following consideration at each `update` step:
 

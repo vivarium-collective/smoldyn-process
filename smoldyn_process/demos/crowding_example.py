@@ -8,6 +8,9 @@
         x, y, z = values for the relative coordinates
         serial_number = monotonically decreasing timestamp for the given species_id
 
+    In the Process API, the logic for generating/setting port data should be in the constructor.
+
+    TODO: Create doc for Process
 
 """
 

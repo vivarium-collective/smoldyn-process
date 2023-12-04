@@ -19,8 +19,8 @@ define R		0.5	# cell radius
 define L_PARAM		2	# half of cell length
 define L_PARAM2		1.5	# half of cell length minus radius
 
-define NUMBER_MIND	4000	# number of MinD in cell
-define NUMBER_MINE	1400	# number of MinE in cell
+define NUMBER_MIND	4000	# number of MinD in cell 4000
+define NUMBER_MINE	1400	# number of MinE in cell 1400
 
 define TIME_STOP	10     # stopping time
 
@@ -107,9 +107,9 @@ endif
 compartment_mol NUMBER_MINE MinE cell
 
 
-output_files FILEROOTout.txt
-cmd B molcountheader FILEROOTout.txt
-cmd i 0 TIME_STOP 2 molcount FILEROOTout.txt
+#output_files FILEROOTout.txt
+#cmd B molcountheader FILEROOTout.txt
+#cmd i 0 TIME_STOP 2 molcount FILEROOTout.txt
 #cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
 #cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
 #cmd i 0 TIME_STOP 10 savesim FILEROOTout.txt
