@@ -1,5 +1,6 @@
 from smoldyn import Simulation
 import json
+from smoldyn_process.utils import get_output_molecule_ids
 
 
 model_fp = 'smoldyn_process/models/model_files/minE_model.txt'
@@ -22,7 +23,7 @@ species_names = ['MinE']
 '''
 
 
-for spec in species_names:
+'''for spec in species_names:
     dataname = spec
     listmols_dataname = dataname + '_molecule_list'
     counts_dataname = dataname + '_counts'
@@ -33,11 +34,11 @@ for spec in species_names:
     sim.addCommand(f'listmols3 {spec} {listmols_dataname}', cmd_type='E')
 
     # get counts for each spec
-    sim.addCommand(f'molcount {spec} {counts_dataname}', cmd_type='E')
+    sim.addCommand(f'molcount {spec} {counts_dataname}', cmd_type='E')'''
 
-sim.run(1, 1)
 
-pos_data = {}
+
+'''pos_data = {}
 for spec in species_names:
     dataname = spec
     listmols_dataname = dataname + '_molecule_list'
@@ -55,7 +56,7 @@ with open('outputs.json', 'w') as f:
 
 
 
-'''mol_data = {}
+mol_data = {}
 for name in species_names:
     dataname = f'{name}_data'
     data = sim.getOutputData(dataname)

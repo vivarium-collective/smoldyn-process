@@ -168,10 +168,10 @@ def read_model_file_as_list(fp: str) -> List[str]:
     return [line.rstrip('\n') for line in lines]
 
 
-def get_output_molecules(output_fp: str, unique: bool = True) -> Union[List[str], Set[str]]:
-    """Return all output molecule names from a specified Smoldyn output file generated from the Smoldyn `listmols`
+def get_output_molecule_ids(output_fp: str, unique: bool = True) -> List[str]:
+    """Return all output molecule ids(names) from a specified Smoldyn output file generated from the Smoldyn `listmols`
         command. If `unique` is set to `True`, the output molecule names will be returned as a set of unique
-        molecule names only, otherwise a list of all molecule names.
+        molecule names only as a list, otherwise a list of all molecule names.
 
         Args:
             output_fp:`str`: filepath to the Smoldyn output file generated from the `listmols` command. PLEASE NOTE:
@@ -183,8 +183,9 @@ def get_output_molecules(output_fp: str, unique: bool = True) -> Union[List[str]
         Returns:
             All output molecule names resulting from the simulation.
     """
-    pass
-
+    output_contents = read_model_file_as_list(output_fp)
+    molecule_ids = [line[0] for line in output_contents]
+    return list(set(molecule_ids)) if unique else molecule_ids
 
 
 class ProcessModel(ABC):
