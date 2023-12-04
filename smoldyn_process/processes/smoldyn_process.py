@@ -99,7 +99,7 @@ class SmoldynProcess(Process):
         'animate': 'bool',
     }
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Dict[str, Any]):
         """A new instance of `SmoldynProcess` based on the `config` that is passed. The schema for the config to be passed in
             this object's constructor is as follows:
 
