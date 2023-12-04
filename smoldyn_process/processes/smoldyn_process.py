@@ -186,7 +186,7 @@ class SmoldynProcess(Process):
         }
         return state
 
-    def set_uniform(self, name: str, config: Dict[str, Any], kill_mol: bool = True) -> None:
+    def set_uniform(self, species_name: str, config: Dict[str, Any], kill_mol: bool = True) -> None:
         """Add a distribution of molecules to the solution in
             the simulation memory given a higher and lower bound x,y coordinate. Smoldyn assumes
             a global boundary versus individual species boundaries. Kills the molecule before dist if true.
@@ -195,19 +195,19 @@ class SmoldynProcess(Process):
             the `update` class method.
 
             Args:
-                name:`str`: name of the given molecule.
+                species_name:`str`: name of the given molecule.
                 config:`Dict`: molecule state.
                 kill_mol:`bool`: kills the molecule based on the `name` argument, which effectively
                     removes the molecule from simulation memory.
         """
         # kill the mol, effectively resetting it
         if kill_mol:
-            self.simulation.runCommand(f'killmol {name}')
+            self.simulation.runCommand(f'killmol {species_name}')
 
         # redistribute the molecule according to the bounds
         self.simulation.addSolutionMolecules(
-            name,
-            config['count'],
+            species=species_name,
+            number=config['count'],
             highpos=config['high'],
             lowpos=config['low']
         )
@@ -269,12 +269,15 @@ class SmoldynProcess(Process):
                 i.e: Shorter intervals will yield both less output molecules and less unique molecule ids.
         """
         # reset the molecules, distribute the mols according to self.boundaries
-        for mol_name, mol_state in state['molecules'].items():  # change term here
-            self.set_uniform(mol_name, {
-                'count': mol_state['count'],
-                'high': self.boundaries['high'],
-                'low': self.boundaries['low']
-            })
+        for name in self.species_names:
+            self.set_uniform(
+                species_name=name,
+                config={
+                    'count': state['species_counts'][name],
+                    'high': self.boundaries['high'],
+                    'low': self.boundaries['low']
+                }
+            )
 
         # run the simulation for a given interval
         self.simulation.run(
