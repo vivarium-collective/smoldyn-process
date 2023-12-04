@@ -148,9 +148,17 @@ def get_reactions(model_fp: str):
     return _reactions
 
 
-def create_listmols_dataframe(values: List[List[float]]) -> pd.DataFrame:
+def create_listmols_dataframe(model_fp: str = None, values: List[List[float]] = None) -> pd.DataFrame:
+    """TODO: Add simulation read -> output spec -> run -> getData functionality."""
     cols = ['species_id', 'state', 'x', 'y', 'z', 'serial_number']
     return pd.DataFrame(data=values, columns=cols)
+
+
+def read_model_file_as_list(fp: str) -> List[str]:
+    with open(fp, 'r') as file:
+        lines = file.readlines()
+    return [line.rstrip('\n') for line in lines]
+
 
 
 class ProcessModel(ABC):
