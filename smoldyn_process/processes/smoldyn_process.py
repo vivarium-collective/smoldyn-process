@@ -135,15 +135,7 @@ class SmoldynProcess(Process):
             if 'empty' not in species_name.lower():
                 self.species_names.append(species_name)
 
-        # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
-        # TODO: add a verification method to ensure that the boundaries do not change on the next step...
-        self.boundaries: Dict[str, List[float]] = dict(zip(['low', 'high'], self.simulation.getBoundaries()))
-
-        # set graphics (defaults to False)
-        if self.config['animate']:
-            self.simulation.addGraphics('opengl_better')
-
-        # make molecule counts dataset for output
+        # make species counts of molecules dataset for output
         #self.simulation.addOutputData('species_counts')
         # write molcounts to counts dataset at every timestep (shape=(n_timesteps, 1+n_species <-- one for time)): [timestep, countSpec1, countSpec2, ...]
         #self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
@@ -155,6 +147,14 @@ class SmoldynProcess(Process):
 
         # set molecule ids to none, as they are not available until after the simulation runs
         self.molecule_ids: List[str] = []
+
+        # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
+        # TODO: add a verification method to ensure that the boundaries do not change on the next step...
+        self.boundaries: Dict[str, List[float]] = dict(zip(['low', 'high'], self.simulation.getBoundaries()))
+
+        # set graphics (defaults to False)
+        if self.config['animate']:
+            self.simulation.addGraphics('opengl_better')
 
     def set_uniform(
             self,
