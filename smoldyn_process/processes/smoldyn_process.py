@@ -282,6 +282,18 @@ class SmoldynProcess(Process):
             dt=self.simulation.dt
         )
 
+        """
+               { 
+                   'species_counts': {
+                       spec_id: int
+                   }
+
+                   'molecules': {
+                      molId--> molid from listmols2[-1] aka serial number : {
+                         coords: list[float] --> listmols2[3:5]
+                         species_id: string (red or green)--> species id from listmols2[1]
+               """
+
         # get the counts data, clear the buffer
         counts_data = self.simulation.getOutputData('species_counts')
 
@@ -298,14 +310,16 @@ class SmoldynProcess(Process):
         # remove the timestep from the list
         final_count.pop(0)
 
+        # create an empty simulation state mirroring that which is specified in the schema
         simulation_state = {
             'species_counts': {},
             'molecules': {}
         }
+
+        # get and populate the species counts
         for index, name in enumerate(self.species_names):
-            simulation_state['species_counts'][name] = {
-                name: int(final_count[index]) - state['species_counts'][name]
-            }
+            simulation_state['species_counts'][name] = int(final_count[index]) - state['species_counts'][name]
+
 
             '''molecules[name] = {
                 'count': int(final_count[index]) - state['species_counts'][name],
@@ -314,7 +328,7 @@ class SmoldynProcess(Process):
 
         # TODO -- post processing to get effective rates
 
-        return {'molecules': molecules}
+        return simulation_state
 
 
 # register the process above as the name passed in the first argument below
