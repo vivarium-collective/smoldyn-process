@@ -340,6 +340,7 @@ def test_process():
                 'animate': False,
             },
             'wires': {  # this should return that which is in the schema
+                'species_counts': ['species_counts_store'],
                 'molecules': ['molecules_store'],
             }
         },
@@ -349,12 +350,14 @@ def test_process():
             'config': {
                 'ports': {
                     'inputs': {
+                        'species_counts': 'tree[string]',
                         'molecules': 'tree[string]'
                     },
                 }
             },
             'wires': {
                 'inputs': {
+                    'species_counts': ['species_counts_store'],
                     'molecules': ['molecules_store'],
                 }
             }
