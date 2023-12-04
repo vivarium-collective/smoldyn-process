@@ -11,12 +11,11 @@ sim = Simulation.fromFile(model_fp)
 species_names = [sim.getSpeciesName(index) for index in range(sim.count()['species'])]
 species_names.remove('empty')
 
-species_names = ['MinE']
-
 unique_mol_ids = get_output_molecule_ids(modelout_fp)
 all_mol_ids = get_output_molecule_ids(modelout_fp, unique=False)
 
-print(f'All ids: {all_mol_ids}\nUnique ids:\n{unique_mol_ids}')
+print(f'Unique ids:\n{unique_mol_ids}')
+print(f'spec names:\n{species_names}')
 
 #sim.addOutputData('molecules')
 

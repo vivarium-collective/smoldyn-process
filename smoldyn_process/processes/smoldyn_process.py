@@ -9,6 +9,39 @@
         serial_number = monotonically decreasing timestamp for the given species_id
 
 
+    I propose the following consideration at each `update` step:
+
+    The `smoldyn.Simulation().connect()` method can be used to (for example) tell the
+    simulation about external environmental parameters that change over the course of
+    the simulation. For example:
+
+        a = None
+        avals = []
+
+        def new_difc(t, args):
+            global a, avals
+            x, y = args
+            avals.append((t, a.difc['soln']))
+            return x * math.sin(t) + y
+
+        def update_difc(val):
+            global a
+            a.difc = val
+
+        def test_connect():
+            global a, avals
+            sim = smoldyn.Simulation(low=(.......
+            a = sim.addSpecies('a', color=black, difc=0.1)
+
+            # specify either function as target:
+            sim.connect(new_dif, update_difc, step=10, args=[1,1])
+
+            # ...or species as target:
+            sim.connect(func = new_dif, target = ’a.difc’, step=10, args=[0, 1])
+
+            sim.run(....
+
+
 """
 
 
@@ -231,6 +264,10 @@ class SmoldynProcess(Process):
 
             Returns:
                 `Dict`: New state according to the update at interval
+
+
+            TODO: We must account for the mol_ids that are generated in the output based on the interval run,
+                i.e: Shorter intervals will yield both less output molecules and less unique molecule ids.
         """
         # reset the molecules, distribute the mols according to self.boundaries
         for mol_name, mol_state in state['molecules'].items():  # change term here
