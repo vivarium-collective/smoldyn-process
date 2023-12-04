@@ -306,6 +306,7 @@ class SmoldynProcess(Process):
             simulation_state['species_counts'][name] = {
                 name: int(final_count[index]) - state['species_counts'][name]
             }
+
             '''molecules[name] = {
                 'count': int(final_count[index]) - state['species_counts'][name],
                 'coordinates': final_location
