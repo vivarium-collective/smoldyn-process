@@ -220,8 +220,17 @@ class SmoldynProcess(Process):
             PLEASE NOTE: the key 'counts' refers to the count of molecules for each molecular species. The number of
                 species_types in this regard does not change, even if that number drops to 0.
         """
+        """
+               { 
+                   'species_counts': {
+                       spec_id: int
+                   }
 
-        # TODO: Include listmols3 spec for spec in self.species_names
+                   'molecules': {
+                      molId--> molid from listmols2[-1] aka serial number : {
+                         coords: list[float] --> listmols2[3:5]
+                         species_id: string (red or green)--> species id from listmols2[1]
+        """
         counts_type = {
             species_name: 'float'
             for species_name in self.species_names
@@ -233,17 +242,7 @@ class SmoldynProcess(Process):
                 'species_id': 'string'
             } for mol_id in self.molecule_ids
         }
-        """
-        { 
-            'species_counts': {
-                spec_id: int
-            }
 
-            'molecules': {
-               molId--> molid from listmols2[-1] aka serial number : {
-                  coords: list[float] --> listmols2[3:5]
-                  species_id: string (red or green)--> species id from listmols2[1]
-        """
         # TODO: include velocity and state to this schema (add to constructor as well)
         return {
             'species_counts': counts_type,
