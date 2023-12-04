@@ -184,7 +184,7 @@ def get_output_molecule_ids(output_fp: str, unique: bool = True) -> List[str]:
             All output molecule names resulting from the simulation.
     """
     output_contents = read_model_file_as_list(output_fp)
-    molecule_ids = [line[0] for line in output_contents]
+    molecule_ids = [line.split()[0] for line in output_contents]
     return list(set(molecule_ids)) if unique else molecule_ids
 
 

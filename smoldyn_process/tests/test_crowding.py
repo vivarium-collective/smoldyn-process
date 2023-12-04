@@ -4,6 +4,7 @@ from smoldyn_process.utils import get_output_molecule_ids
 
 
 model_fp = 'smoldyn_process/models/model_files/minE_model.txt'
+modelout_fp = 'smoldyn_process/models/model_files/minE_modelout.txt'
 
 sim = Simulation.fromFile(model_fp)
 
@@ -11,6 +12,11 @@ species_names = [sim.getSpeciesName(index) for index in range(sim.count()['speci
 species_names.remove('empty')
 
 species_names = ['MinE']
+
+unique_mol_ids = get_output_molecule_ids(modelout_fp)
+all_mol_ids = get_output_molecule_ids(modelout_fp, unique=False)
+
+print(f'All ids: {all_mol_ids}\nUnique ids:\n{unique_mol_ids}')
 
 #sim.addOutputData('molecules')
 

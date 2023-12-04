@@ -44,6 +44,15 @@ class SmoldynProcess(Process):
             3. that no actual parameter values are passed in the `config_schema`, but rather a path to a smoldyn
                 model file. TODO: Expand this statement.
 
+    # TODO: Figure this out:
+    To start, we have:
+        - modelfile
+
+    We can also either:
+        - keep output commands in modelfile to get output file
+        - pass the model output file along with the model file
+
+    ...for the purpose of telling the process what output to expect?
 
     """
 
