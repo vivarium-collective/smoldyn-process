@@ -37,19 +37,33 @@ class SmoldynProcess(Process):
 
     PLEASE NOTE:
 
-        The current implementation of this class assumes 2 key conditions:
+        The current implementation of this class assumes 3 key conditions:
             1. that a smoldyn model file is present and working
             2. that output commands are not listed in the Smoldyn
                 model file. If they are, simply comment them out before using this.
+            3. that no actual parameter values are passed in the `config_schema`, but rather a path to a smoldyn
+                model file. TODO: Expand this statement.
+
 
     """
 
+    # TODO: Add the ability to pass model parameters and not just a model file.
     config_schema = {
         'model_filepath': 'string',
-        'animate': 'boolean',
+        'animate': 'bool',
     }
 
     def __init__(self, config: Dict = None):
+        """A new instance of `SmoldynProcess` based on the `config` that is passed. The schema for the config to be passed in
+            this object's constructor is as follows:
+
+            config_schema = {
+                'model_filepath': 'string',  <-- analogous to python `str`
+                'animate': 'bool'  <-- of type `bigraph_schema.base_types.bool`
+
+
+            # TODO: It would be nice to have classes associated with this.
+        """
         super().__init__(config)
 
         # specify the model fp for clarity
@@ -57,7 +71,9 @@ class SmoldynProcess(Process):
 
         # enforce model filepath passing
         if not self.model_filepath:
-            raise ValueError('The config requires a path to a Smoldyn model file.')
+            raise ValueError(
+                'The Process configuration requires a Smoldyn model filepath to be passed.'
+            )
 
         # initialize the simulator from a Smoldyn model.txt file.
         self.simulation: sm.Simulation = sm.Simulation.fromFile(self.model_filepath)
