@@ -33,7 +33,7 @@ for spec in species_names:
     sim.addCommand(f'listmols3 {spec} {listmols_dataname}', cmd_type='E')
 
     # get counts for each spec
-    sim.addCommand(f'molcount {spec} {counts_dataname}')
+    sim.addCommand(f'molcount {spec} {counts_dataname}', cmd_type='E')
 
 sim.run(1, 1)
 
