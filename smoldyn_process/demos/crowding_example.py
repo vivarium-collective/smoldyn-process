@@ -92,14 +92,12 @@ class SmoldynProcess(Process):
 
         # make molecule counts dataset
         self.simulation.addOutputData('molecule_counts')
-        # write molcount header to counts dataset at start of simulation
-        self.simulation.addCommand(cmd='molcountheader molecule_counts', cmd_type='B')
-        # write molcounts to counts dataset at every timestep
+        # write molcounts to counts dataset at every timestep (shape=(n_timesteps, 1+n_species <-- one for time)): [timestep, countSpec1, countSpec2, ...]
         self.simulation.addCommand(cmd='molcount molecule_counts', cmd_type='E')
 
         # make coordinates dataset
         self.simulation.addOutputData('molecule_locations')
-        # write coords to dataset at every timestep
+        # write coords to dataset at every timestep (shape=(n_output_molecules, 6)): six being [mol_id(species), mol_state, x, y, z, mol_serial_num]
         self.simulation.addCommand(cmd='listmols molecule_locations', cmd_type='E')
 
 

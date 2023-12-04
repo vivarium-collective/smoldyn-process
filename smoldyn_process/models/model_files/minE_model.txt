@@ -108,8 +108,10 @@ compartment_mol NUMBER_MINE MinE cell
 
 
 output_files FILEROOTout.txt
+cmd B molcountheader FILEROOTout.txt
+cmd i 0 TIME_STOP 2 molcount FILEROOTout.txt
 #cmd i 0 TIME_STOP 2 executiontime FILEROOTout.txt
-cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
+#cmd i 0 TIME_STOP 2 listmols FILEROOTout.txt
 #cmd i 0 TIME_STOP 10 savesim FILEROOTout.txt
 #cmd i 0 TIME_STOP 2 molmoments MinD_ATP(front) FILEROOTout.txt
 
