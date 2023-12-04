@@ -324,7 +324,7 @@ class SmoldynProcess(Process):
 
 
 # register the process above as the name passed in the first argument below
-process_registry.register('smoldyn', SmoldynProcess)
+process_registry.register('smoldyn_process', SmoldynProcess)
 
 
 def test_process():
@@ -334,7 +334,7 @@ def test_process():
     instance = {
         'smoldyn': {
             '_type': 'process',
-            'address': 'local:smoldyn',
+            'address': 'local:smoldyn_process',
             'config': {
                 'model_filepath': 'smoldyn_process/models/model_files/crowding_model.txt',
                 'animate': False,
