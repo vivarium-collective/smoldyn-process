@@ -290,7 +290,7 @@ class SmoldynProcess(Process):
 
                    'molecules': {
                       molId--> molid from listmols2[-1] aka serial number : {
-                         coords: list[float] --> listmols2[3:5]
+                         coords: list[float] --> listmols2[3:6]
                          species_id: string (red or green)--> species id from listmols2[1]
                """
 
@@ -300,9 +300,7 @@ class SmoldynProcess(Process):
         # get the data based on the commands added in the constructor, clear the buffer
         molecules_data = self.simulation.getOutputData('molecules')
 
-        # update the list of known molecule ids
-        for molecule in molecules_data:
-            self.molecule_ids.append(str(molecule[1]))
+
 
         # get the final counts for the update
         final_count = counts_data[-1]
@@ -320,11 +318,16 @@ class SmoldynProcess(Process):
         for index, name in enumerate(self.species_names):
             simulation_state['species_counts'][name] = int(final_count[index]) - state['species_counts'][name]
 
+        # update the list of known molecule ids (convert to an intstring)
+        for molecule in molecules_data:
+            self.molecule_ids.append(str(int(molecule[1])))
 
-            '''molecules[name] = {
-                'count': int(final_count[index]) - state['species_counts'][name],
-                'coordinates': final_location
-            }'''
+        # get and populate the output molecules
+        for index, mol_id in enumerate(self.molecule_ids):
+            simulation_state['molecules'][mol_id] = {
+                'coordinates': molecules_data[index][3:6],
+                'species_id': molecules_data[index][1]
+            }
 
         # TODO -- post processing to get effective rates
 

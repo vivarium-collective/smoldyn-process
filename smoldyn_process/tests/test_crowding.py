@@ -13,12 +13,12 @@ species_names.remove('empty')
 
 
 sim.addOutputData('mols')
-sim.addCommand(cmd=f'molcount mols', cmd_type='E')
+sim.addCommand(cmd=f'listmols2 mols', cmd_type='E')
 sim.run(1, 1)
 
-finalmols = sim.getOutputData('mols')[-1]
-finalmols.pop(0)
-print(finalmols)
+finalmols = sim.getOutputData('mols')
+for mol in finalmols:
+    print(mol[3:6])
 
 
 
