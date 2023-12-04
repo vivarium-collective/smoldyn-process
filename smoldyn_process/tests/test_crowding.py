@@ -13,13 +13,6 @@ species_names = [sim.getSpeciesName(index) for index in range(sim.count()['speci
 species_names.remove('empty')
 
 
-
-
-
-sim.addOutputData('count')
-sim.addCommand(cmd='molcount count', cmd_type='E')
-sim.run(10, 1)
-print(sim.getOutputData('count'))
 for name in species_names:
     print(sim.getMoleculeCount(name, MolecState.all))
 

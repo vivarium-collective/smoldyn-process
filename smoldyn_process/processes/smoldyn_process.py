@@ -135,12 +135,6 @@ class SmoldynProcess(Process):
             if 'empty' not in species_name.lower():
                 self.species_names.append(species_name)
 
-
-        initial_species_counts = {
-            spec_name: self.simulation.getMoleculeCount(spec_name, MolecState.all)
-            for spec_name in self.species_names
-        }
-
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
         self.boundaries: Dict[str, List[float]] = dict(zip(['low', 'high'], self.simulation.getBoundaries()))
@@ -209,14 +203,11 @@ class SmoldynProcess(Process):
 
             NOTE: This method should provide an implementation of the structure denoted in `self.schema`.
         """
-
+        # get the initial species counts
         initial_species_counts = {
             spec_name: self.simulation.getMoleculeCount(spec_name, MolecState.all)
             for spec_name in self.species_names
         }
-
-        for name in initial_species_counts.keys():
-            self.set_uniform(name, count=initial_species_counts[name])
 
         return {
             'species_counts': initial_species_counts,
