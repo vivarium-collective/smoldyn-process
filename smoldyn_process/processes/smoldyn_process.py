@@ -282,29 +282,14 @@ class SmoldynProcess(Process):
             dt=self.simulation.dt
         )
 
-        """
-               { 
-                   'species_counts': {
-                       spec_id: int
-                   }
-
-                   'molecules': {
-                      molId--> molid from listmols2[-1] aka serial number : {
-                         coords: list[float] --> listmols2[3:6]
-                         species_id: string (red or green)--> species id from listmols2[1]
-               """
-
         # get the counts data, clear the buffer
         counts_data = self.simulation.getOutputData('species_counts')
 
         # get the data based on the commands added in the constructor, clear the buffer
         molecules_data = self.simulation.getOutputData('molecules')
 
-
-
         # get the final counts for the update
         final_count = counts_data[-1]
-
         # remove the timestep from the list
         final_count.pop(0)
 
