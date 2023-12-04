@@ -135,6 +135,12 @@ class SmoldynProcess(Process):
             if 'empty' not in species_name.lower():
                 self.species_names.append(species_name)
 
+
+        initial_species_counts = {
+            spec_name: self.simulation.getMoleculeCount(spec_name, MolecState.all)
+            for spec_name in self.species_names
+        }
+
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
         self.boundaries: Dict[str, List[float]] = dict(zip(['low', 'high'], self.simulation.getBoundaries()))
@@ -143,12 +149,12 @@ class SmoldynProcess(Process):
         if self.config['animate']:
             self.simulation.addGraphics('opengl_better')
 
-        # make molecule counts dataset
-        self.simulation.addOutputData('species_counts')
+        # make molecule counts dataset for output
+        #self.simulation.addOutputData('species_counts')
         # write molcounts to counts dataset at every timestep (shape=(n_timesteps, 1+n_species <-- one for time)): [timestep, countSpec1, countSpec2, ...]
-        self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
+        #self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
 
-        # make molecules dataset (molecule information)
+        # make molecules dataset (molecule information) for output
         self.simulation.addOutputData('molecules')
         # write coords to dataset at every timestep (shape=(n_output_molecules, 7)): seven being [timestep, smol_id(species), mol_state, x, y, z, mol_serial_num]
         self.simulation.addCommand(cmd='listmols2 molecules', cmd_type='E')
@@ -156,7 +162,12 @@ class SmoldynProcess(Process):
         # set molecule ids to none, as they are not available until after the simulation runs
         self.molecule_ids: List[str] = []
 
-    def set_uniform(self, species_name: str, config: Dict[str, Any], kill_mol: bool = True) -> None:
+    def set_uniform(
+            self,
+            species_name: str,
+            kill_mol: bool = True,
+            **configuration_parameters: Dict[str, Union[List[float], int]]
+            ) -> None:
         """Add a distribution of molecules to the solution in
             the simulation memory given a higher and lower bound x,y coordinate. Smoldyn assumes
             a global boundary versus individual species boundaries. Kills the molecule before dist if true.
@@ -166,7 +177,7 @@ class SmoldynProcess(Process):
 
             Args:
                 species_name:`str`: name of the given molecule.
-                config:`Dict`: molecule state.
+                **configuration_parameters:`Dict`: kwargs are as such: 'low', 'high', 'count'
                 kill_mol:`bool`: kills the molecule based on the `name` argument, which effectively
                     removes the molecule from simulation memory.
         """
@@ -174,12 +185,15 @@ class SmoldynProcess(Process):
         if kill_mol:
             self.simulation.runCommand(f'killmol {species_name}')
 
+        high_bounds = configuration_parameters['high'] or self.boundaries['high']
+        low_bounds = configuration_parameters['low'] or self.boundaries['low']
+
         # redistribute the molecule according to the bounds
         self.simulation.addSolutionMolecules(
             species=species_name,
-            number=config['count'],
-            highpos=config['high'],
-            lowpos=config['low']
+            number=configuration_parameters['count'],
+            highpos=high_bounds,
+            lowpos=low_bounds
         )
 
     def initial_state(self) -> Dict[str, Dict]:
@@ -196,21 +210,18 @@ class SmoldynProcess(Process):
             NOTE: This method should provide an implementation of the structure denoted in `self.schema`.
         """
 
-        # TODO: update for distribution!
-        initial_conditions = {
-            mol_name: {
-                'count': self.simulation.getMoleculeCount(mol_name, MolecState.all),
-                'coordinates': [0.0 for _ in range(6)]
-            } for mol_name in self.species_names
+        initial_species_counts = {
+            spec_name: self.simulation.getMoleculeCount(spec_name, MolecState.all)
+            for spec_name in self.species_names
         }
 
-        # place uniform and then getOUtputData
+        for name in initial_species_counts.keys():
+            self.set_uniform(name, count=initial_species_counts[name])
 
-        # TODO: fill these with a default state with get initial mol state method
-        state = {
-            'molecules': initial_conditions
+        return {
+            'species_counts': initial_species_counts,
+            'molecules': {}
         }
-        return state
 
     def schema(self) -> Dict:
         """Return a dictionary of molecule names and the expected input/output schema at simulation
@@ -229,17 +240,19 @@ class SmoldynProcess(Process):
                    'molecules': {
                       molId--> molid from listmols2[-1] aka serial number : {
                          coords: list[float] --> listmols2[3:5]
-                         species_id: string (red or green)--> species id from listmols2[1]
+                         species_id: string (red or green)--> species id from listmols2[1],
+                         state: string --> state id from listmols2[2]
         """
         counts_type = {
-            species_name: 'float'
+            species_name: 'int'
             for species_name in self.species_names
         }
 
         molecules_type = {
             mol_id: {
                 'coordinates': 'list[float]',
-                'species_id': 'string'
+                'species_id': 'string',
+                'state': 'string'
             } for mol_id in self.molecule_ids
         }
 
@@ -271,11 +284,7 @@ class SmoldynProcess(Process):
         for name in self.species_names:
             self.set_uniform(
                 species_name=name,
-                config={
-                    'count': state['species_counts'][name],
-                    'high': self.boundaries['high'],
-                    'low': self.boundaries['low']
-                }
+                count=state['species_counts'][name]
             )
 
         # run the simulation for a given interval
@@ -285,15 +294,15 @@ class SmoldynProcess(Process):
         )
 
         # get the counts data, clear the buffer
-        counts_data = self.simulation.getOutputData('species_counts')
+        # counts_data = self.simulation.getOutputData('species_counts')
+
+        # get the final counts for the update
+        # final_count = counts_data[-1]
+        # remove the timestep from the list
+        # final_count.pop(0)
 
         # get the data based on the commands added in the constructor, clear the buffer
         molecules_data = self.simulation.getOutputData('molecules')
-
-        # get the final counts for the update
-        final_count = counts_data[-1]
-        # remove the timestep from the list
-        final_count.pop(0)
 
         # create an empty simulation state mirroring that which is specified in the schema
         simulation_state = {
@@ -303,7 +312,7 @@ class SmoldynProcess(Process):
 
         # get and populate the species counts
         for index, name in enumerate(self.species_names):
-            simulation_state['species_counts'][name] = int(final_count[index]) - state['species_counts'][name]
+            simulation_state['species_counts'][name] = self.simulation.getMoleculeCount(name, MolecState.all) - state['species_counts'][name] #int(final_count[index]) - state['species_counts'][name]
 
         # update the list of known molecule ids (convert to an intstring)
         for molecule in molecules_data:
@@ -311,9 +320,11 @@ class SmoldynProcess(Process):
 
         # get and populate the output molecules
         for index, mol_id in enumerate(self.molecule_ids):
+            single_molecule_data = molecules_data[index]
             simulation_state['molecules'][mol_id] = {
-                'coordinates': molecules_data[index][3:6],
-                'species_id': molecules_data[index][1]
+                'coordinates': single_molecule_data[3:6],
+                'species_id': str(single_molecule_data[1]),
+                'state': str(single_molecule_data[2])
             }
 
         # TODO -- post processing to get effective rates

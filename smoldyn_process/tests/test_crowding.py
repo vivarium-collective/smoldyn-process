@@ -1,6 +1,7 @@
 from smoldyn import Simulation
 import json
 from smoldyn_process.utils import get_output_molecule_ids, read_model_file_as_list
+from smoldyn._smoldyn import MolecState
 
 
 model_fp = 'smoldyn_process/models/model_files/minE_model.txt'
@@ -12,16 +13,15 @@ species_names = [sim.getSpeciesName(index) for index in range(sim.count()['speci
 species_names.remove('empty')
 
 
-sim.addOutputData('mols')
-sim.addCommand(cmd=f'listmols2 mols', cmd_type='E')
-sim.run(1, 1)
-
-finalmols = sim.getOutputData('mols')
-for mol in finalmols:
-    print(mol[3:6])
 
 
 
+sim.addOutputData('count')
+sim.addCommand(cmd='molcount count', cmd_type='E')
+sim.run(10, 1)
+print(sim.getOutputData('count'))
+for name in species_names:
+    print(sim.getMoleculeCount(name, MolecState.all))
 
 '''print(len(serials), len(unique_serials))
 print(unique_ids)
