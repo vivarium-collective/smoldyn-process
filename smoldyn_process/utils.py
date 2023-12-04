@@ -155,9 +155,35 @@ def create_listmols_dataframe(model_fp: str = None, values: List[List[float]] = 
 
 
 def read_model_file_as_list(fp: str) -> List[str]:
+    """Return either a Smoldyn configuration(input) or Smoldyn output model file as a list of strings.
+
+        Args:
+            fp:`str`: filepath to the configuration or output file.
+
+        Returns:
+            The file contents as a list of strings delimited by new line breaks.
+    """
     with open(fp, 'r') as file:
         lines = file.readlines()
     return [line.rstrip('\n') for line in lines]
+
+
+def get_output_molecules(output_fp: str, unique: bool = True) -> Union[List[str], Set[str]]:
+    """Return all output molecule names from a specified Smoldyn output file generated from the Smoldyn `listmols`
+        command. If `unique` is set to `True`, the output molecule names will be returned as a set of unique
+        molecule names only, otherwise a list of all molecule names.
+
+        Args:
+            output_fp:`str`: filepath to the Smoldyn output file generated from the `listmols` command. PLEASE NOTE:
+                this function will raise an Exception if the output file was generated from any other command, as
+                the contents is expected to be particularly formatted.
+            unique:`bool`: If set to `True`, returns a set of only unique names, otherwise all names. Defaults
+                to `True`.
+
+        Returns:
+            All output molecule names resulting from the simulation.
+    """
+    pass
 
 
 
