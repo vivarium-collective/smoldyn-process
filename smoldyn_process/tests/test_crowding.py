@@ -12,9 +12,33 @@ sim = Simulation.fromFile(model_fp)
 species_names = [sim.getSpeciesName(index) for index in range(sim.count()['species'])]
 species_names.remove('empty')
 
+new_counts = {
+    "0": {
+        name: sim.getMoleculeCount(name, MolecState.all)
+        for name in species_names
+    }
+}
 
 for name in species_names:
     print(sim.getMoleculeCount(name, MolecState.all))
+
+dataname = 'species_counts'
+sim.addOutputData(dataname)
+sim.addCommand(cmd=f'molcount {dataname}', cmd_type='E')
+time_stop = 10
+sim.run(time_stop, 1)
+species_counts_list = sim.getOutputData(dataname, False)
+species_counts = {}
+
+for timestep in species_counts_list:
+    time_index = int(timestep.pop(0))
+    species_counts[time_index] = {
+        name: timestep[i]
+        for i, name in enumerate(species_names)
+    }
+
+print(new_counts)
+
 
 '''print(len(serials), len(unique_serials))
 print(unique_ids)

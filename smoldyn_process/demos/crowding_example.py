@@ -136,9 +136,9 @@ class SmoldynProcess(Process):
                 self.species_names.append(species_name)
 
         # make species counts of molecules dataset for output
-        #self.simulation.addOutputData('species_counts')
+        self.simulation.addOutputData('species_counts')
         # write molcounts to counts dataset at every timestep (shape=(n_timesteps, 1+n_species <-- one for time)): [timestep, countSpec1, countSpec2, ...]
-        #self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
+        self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
 
         # make molecules dataset (molecule information) for output
         self.simulation.addOutputData('molecules')
@@ -190,7 +190,7 @@ class SmoldynProcess(Process):
             lowpos=low_bounds
         )
 
-    def initial_state(self) -> Dict[str, Dict]:
+    def initial_state(self) -> Dict[str, Union[int, Dict]]:
         """Set the initial parameter state of the simulation. This method should return an implementation of
             that which is returned by `self.schema()`.
 
@@ -214,25 +214,13 @@ class SmoldynProcess(Process):
             'molecules': {}
         }
 
-    def schema(self) -> Dict:
+    def schema(self) -> Dict[str, Union[Dict[str, str], Dict[str, Dict[str, str]]]]:
         """Return a dictionary of molecule names and the expected input/output schema at simulation
             runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
             are specified alongside molecules.
 
             PLEASE NOTE: the key 'counts' refers to the count of molecules for each molecular species. The number of
                 species_types in this regard does not change, even if that number drops to 0.
-        """
-        """
-               { 
-                   'species_counts': {
-                       spec_id: int
-                   }
-
-                   'molecules': {
-                      molId--> molid from listmols2[-1] aka serial number : {
-                         coords: list[float] --> listmols2[3:5]
-                         species_id: string (red or green)--> species id from listmols2[1],
-                         state: string --> state id from listmols2[2]
         """
         counts_type = {
             species_name: 'int'
@@ -285,12 +273,12 @@ class SmoldynProcess(Process):
         )
 
         # get the counts data, clear the buffer
-        # counts_data = self.simulation.getOutputData('species_counts')
+        counts_data = self.simulation.getOutputData('species_counts')
 
         # get the final counts for the update
-        # final_count = counts_data[-1]
+        final_count = counts_data[-1]
         # remove the timestep from the list
-        # final_count.pop(0)
+        final_count.pop(0)
 
         # get the data based on the commands added in the constructor, clear the buffer
         molecules_data = self.simulation.getOutputData('molecules')
@@ -303,7 +291,7 @@ class SmoldynProcess(Process):
 
         # get and populate the species counts
         for index, name in enumerate(self.species_names):
-            simulation_state['species_counts'][name] = self.simulation.getMoleculeCount(name, MolecState.all) - state['species_counts'][name] #int(final_count[index]) - state['species_counts'][name]
+            simulation_state['species_counts'][name] = int(final_count[index]) - state['species_counts'][name]
 
         # update the list of known molecule ids (convert to an intstring)
         for molecule in molecules_data:
