@@ -155,6 +155,7 @@ class SmoldynProcess(Process):
         # set graphics (defaults to False)
         if self.config['animate']:
             self.simulation.addGraphics('opengl_better')
+        print(self.species_names)
 
     def set_uniform(
             self,
@@ -263,7 +264,7 @@ class SmoldynProcess(Process):
         for name in self.species_names:
             self.set_uniform(
                 species_name=name,
-                count=state['species_counts'][name]
+                count=state['species_counts'][name],
             )
 
         # run the simulation for a given interval
@@ -338,8 +339,8 @@ def test_process():
             'config': {
                 'ports': {
                     'inputs': {
-                        'species_counts': 'tree',
-                        'molecules': 'tree'
+                        'species_counts': 'tree[any]',
+                        'molecules': 'tree[any]'
                     },
                 }
             },
