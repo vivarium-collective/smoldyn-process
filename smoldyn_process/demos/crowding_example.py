@@ -215,9 +215,17 @@ class SmoldynProcess(Process):
             for spec_name in self.species_names
         }
 
+        initial_molecules = {
+            mol_id: {
+                'coordinates': [],
+                'species_id': str(i),
+                'state': '0'
+            } for i, mol_id in enumerate(self.molecule_ids)
+        }
+
         return {
             'species_counts': initial_species_counts,
-            'molecules': {}
+            'molecules': initial_molecules
         }
 
     def schema(self) -> Dict[str, Union[Dict[str, str], Dict[str, Dict[str, str]]]]:
@@ -235,7 +243,7 @@ class SmoldynProcess(Process):
 
         molecules_type = {
             mol_id: {
-                'coordinates': 'list[float]',
+                'coordinates': 'list',
                 'species_id': 'string',
                 'state': 'string'
             } for mol_id in self.molecule_ids
@@ -348,6 +356,10 @@ def test_process():
                         'species_counts': 'tree[any]',
                         'molecules': 'tree[any]'
                     },
+                    'outputs': {
+                        'species_counts': 'tree[any]',
+                        'molecules': 'tree[any]'
+                    },
                 }
             },
             'wires': {
@@ -372,8 +384,7 @@ def test_process():
     print(f'RESULTS: {pf(results)}')
 
 
-if __name__ == '__main__':
-    #test_process()
+def manually_test_process():
     config = {
         'model_filepath': 'smoldyn_process/models/model_files/minE_model.txt',
         'animate': False
@@ -390,12 +401,23 @@ if __name__ == '__main__':
                 return result
                 # return runs
 
+    def write_results():
+        import json
+        results_path = os.path.join(os.getcwd(), 'results.json')
+        if not os.path.exists(results_path):
+            with open(results_path, 'w') as f:
+                print('json is dumping')
+                json.dump(result, f, indent=4)
+                print('json dumped')
+
     stop = 1
 
     result = run(stop)
+    write_results()
+    print(f'Initial State: {initial_state}')
 
-    import json
-    print('json is dumping')
-    with open(os.path.join(os.getcwd(), 'results.json'), 'w') as f:
-        json.dump(result, f, indent=4)
-    print('json dumped')
+
+if __name__ == '__main__':
+    test_process()
+
+
