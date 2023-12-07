@@ -294,7 +294,8 @@ class SmoldynProcess(Process):
         for index, name in enumerate(self.species_names):
             simulation_state['species_counts'][name] = int(final_count[index]) - state['species_counts'][name]
 
-        # update the list of known molecule ids (convert to an intstring)
+        # clear the list of known molecule ids and update the list of known molecule ids (convert to an intstring)
+        self.molecule_ids.clear()
         for molecule in molecules_data:
             self.molecule_ids.append(str(int(molecule[1])))
 
