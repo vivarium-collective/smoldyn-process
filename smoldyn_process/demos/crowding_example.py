@@ -139,7 +139,7 @@ class SmoldynProcess(Process):
             species_name = self.simulation.getSpeciesName(index)
             if 'empty' not in species_name.lower():
                 self.species_names.append(species_name)
-        # sort for mol id index
+        # sort for logistical mapping to species names (i.e: ['a', 'b', c'] == ['0', '1', '2']
         self.species_names.sort()
 
         # make species counts of molecules dataset for output
@@ -153,7 +153,7 @@ class SmoldynProcess(Process):
         self.simulation.addCommand(cmd='listmols2 molecules', cmd_type='E')
 
         # initialize the molecule ids based on the species names. We need this value to properly emit the schema, which expects a single value from this to be a str(int)
-        self.molecule_ids: List[str] = [str(n) for n in range(len(self.species_names))]
+        self.molecule_ids: List[str] = ['mol_' + str(n) for n in range(len(self.species_names))]
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
@@ -162,7 +162,6 @@ class SmoldynProcess(Process):
         # set graphics (defaults to False)
         if self.config['animate']:
             self.simulation.addGraphics('opengl_better')
-        print(self.species_names)
 
     def set_uniform(
             self,
@@ -303,7 +302,7 @@ class SmoldynProcess(Process):
         # clear the list of known molecule ids and update the list of known molecule ids (convert to an intstring)
         self.molecule_ids.clear()
         for molecule in molecules_data:
-            self.molecule_ids.append(str(int(molecule[1])))
+            self.molecule_ids.append('mol_' + str(int(molecule[1])))
 
         # get and populate the output molecules
         for index, mol_id in enumerate(self.molecule_ids):
@@ -374,7 +373,7 @@ def test_process():
 
 
 if __name__ == '__main__':
-    test_process()
+    #test_process()
     config = {
         'model_filepath': 'smoldyn_process/models/model_files/minE_model.txt',
         'animate': False
@@ -383,16 +382,16 @@ if __name__ == '__main__':
     initial_state = process.initial_state()
 
     def run(stop):
+        runs = []
         for t, _ in enumerate(list(range(stop)), 1):
             result = process.update(initial_state, t)
+            runs.append(result)
             if t == stop:
-                print(result)
-                return result
+                return runs
 
-    stop1 = 1
-    stop2 = 3
+    stop = 1
 
-    result1 = run(stop1)
-    result2 = run(stop2)
+    result = run(stop)
 
-    print(f'result1:\n{result1}\nresult2:\n{result2}')
+    print(result)
+    print(list(set(process.molecule_ids)))
