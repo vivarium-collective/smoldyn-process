@@ -91,6 +91,11 @@ class SmoldynProcess(Process):
 
     ...for the purpose of telling the process what output to expect?
 
+    Attributes:
+        model_filepath:`str`: filepath to the smoldyn model you want to reference in this Process
+        animate:`bool`: Displays graphical simulation output from smoldyn if set to `True`. Defaults to `False`.
+
+
     """
 
     # TODO: Add the ability to pass model parameters and not just a model file.
@@ -172,7 +177,7 @@ class SmoldynProcess(Process):
 
             Args:
                 species_name:`str`: name of the given molecule.
-                **configuration_parameters:`Dict`: kwargs are as such: 'low', 'high', 'count'
+                **configuration_parameters:`Dict`: kwargs are as such: 'count'
                 kill_mol:`bool`: kills the molecule based on the `name` argument, which effectively
                     removes the molecule from simulation memory.
         """
@@ -180,15 +185,14 @@ class SmoldynProcess(Process):
         if kill_mol:
             self.simulation.runCommand(f'killmol {species_name}')
 
-        high_bounds = configuration_parameters['high'] or self.boundaries['high']
-        low_bounds = configuration_parameters['low'] or self.boundaries['low']
+        # TODO: eventually allow for an expanding boundary ie in the configuration parameters (pymunk?), which is defies the methodology of smoldyn
 
         # redistribute the molecule according to the bounds
         self.simulation.addSolutionMolecules(
             species=species_name,
             number=configuration_parameters['count'],
-            highpos=high_bounds,
-            lowpos=low_bounds
+            highpos=self.boundaries['high'],
+            lowpos=self.boundaries['low']
         )
 
     def initial_state(self) -> Dict[str, Union[int, Dict]]:
@@ -239,7 +243,7 @@ class SmoldynProcess(Process):
         # TODO: include velocity and state to this schema (add to constructor as well)
         return {
             'species_counts': counts_type,
-            'molecules': molecules_type
+            'molecules': 'tree[any]'#molecules_type
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -369,3 +373,24 @@ def test_process():
 
 if __name__ == '__main__':
     test_process()
+    config = {
+        'model_filepath': 'smoldyn_process/models/model_files/minE_model.txt',
+        'animate': False
+    }
+    process = SmoldynProcess(config)
+    initial_state = process.initial_state()
+
+    def run(stop):
+        for t, _ in enumerate(list(range(stop)), 1):
+            result = process.update(initial_state, t)
+            if t == stop:
+                print(result)
+                return result
+
+    stop1 = 1
+    stop2 = 3
+
+    result1 = run(stop1)
+    result2 = run(stop2)
+
+    print(f'result1:\n{result1}\nresult2:\n{result2}')
