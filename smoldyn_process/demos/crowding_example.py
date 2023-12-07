@@ -378,11 +378,12 @@ def test_process():
     })
 
     # run
-    workflow.run(10)
+    workflow.run(2)
 
     # gather results
     results = workflow.gather_results()
     print(f'RESULTS: {pf(results)}')
+    write_results(results, 'composite_results.json')
 
 
 def manually_test_process():
@@ -393,34 +394,36 @@ def manually_test_process():
     process = SmoldynProcess(config)
     initial_state = process.initial_state()
 
-    def run(stop):
-        runs = []
-        for t, _ in enumerate(list(range(stop)), 1):
-            result = process.update(initial_state, t)
-            runs.append(result)
-            if t == stop:
-                return result
-                # return runs
-
-    def write_results():
-        import json
-        results_path = os.path.join(os.getcwd(), 'results.json')
-        if not os.path.exists(results_path):
-            with open(results_path, 'w') as f:
-                print('json is dumping')
-                json.dump(result, f, indent=4)
-                print('json dumped')
-
     stop = 1
 
-    result = run(stop)
-    write_results()
+    result = run(stop, initial_state, process)
+    write_results(result, 'manual_results.json')
     print(f'Initial State: {initial_state}')
     print(f'molecule: {process.molecule_ids}')
 
 
+def run(stop, initial_state, process):
+    runs = []
+    for t, _ in enumerate(list(range(stop)), 1):
+        result = process.update(initial_state, t)
+        runs.append(result)
+        if t == stop:
+            return result
+            # return runs
+
+
+def write_results(result, fn: str):
+    import json
+    results_path = os.path.join(os.getcwd(), fn)
+    if not os.path.exists(results_path):
+        with open(results_path, 'w') as f:
+            print('json is dumping')
+            json.dump(result, f, indent=4)
+            print('json dumped')
+
+
 if __name__ == '__main__':
     test_process()
-    manually_test_process()
+    #manually_test_process()
 
 
