@@ -383,7 +383,6 @@ def test_process():
     # gather results
     results = workflow.gather_results()
     print(f'RESULTS: {pf(results)}')
-    write_results(results, 'composite_results.json')
 
 
 def manually_test_process():
