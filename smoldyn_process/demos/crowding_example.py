@@ -139,6 +139,8 @@ class SmoldynProcess(Process):
             species_name = self.simulation.getSpeciesName(index)
             if 'empty' not in species_name.lower():
                 self.species_names.append(species_name)
+        # sort for mol id index
+        self.species_names.sort()
 
         # make species counts of molecules dataset for output
         self.simulation.addOutputData('species_counts')
