@@ -41,15 +41,15 @@
             sim.connect(new_dif, update_difc, step=10, args=[1,1])
 
             # ...or species as target:
-            sim.connect(func = new_dif, target = ’a.difc’, step=10, args=[0, 1])
+            sim.connect(func = new_dif, target = 'a.difc', step=10, args=[0, 1])
 
             sim.run(....
 
 
 """
-
-
+import os
 from typing import *
+from uuid import uuid4
 import numpy as np
 import smoldyn as sm
 from smoldyn._smoldyn import MolecState
@@ -91,6 +91,11 @@ class SmoldynProcess(Process):
 
     ...for the purpose of telling the process what output to expect?
 
+    Attributes:
+        model_filepath:`str`: filepath to the smoldyn model you want to reference in this Process
+        animate:`bool`: Displays graphical simulation output from smoldyn if set to `True`. Defaults to `False`.
+
+
     """
 
     # TODO: Add the ability to pass model parameters and not just a model file.
@@ -99,7 +104,7 @@ class SmoldynProcess(Process):
         'animate': 'bool',
     }
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any] = None):
         """A new instance of `SmoldynProcess` based on the `config` that is passed. The schema for the config to be passed in
             this object's constructor is as follows:
 
@@ -134,19 +139,22 @@ class SmoldynProcess(Process):
             species_name = self.simulation.getSpeciesName(index)
             if 'empty' not in species_name.lower():
                 self.species_names.append(species_name)
+        # sort for logistical mapping to species names (i.e: ['a', 'b', c'] == ['0', '1', '2']
+        self.species_names.sort()
 
         # make species counts of molecules dataset for output
-        #self.simulation.addOutputData('species_counts')
+        self.simulation.addOutputData('species_counts')
         # write molcounts to counts dataset at every timestep (shape=(n_timesteps, 1+n_species <-- one for time)): [timestep, countSpec1, countSpec2, ...]
-        #self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
+        self.simulation.addCommand(cmd='molcount species_counts', cmd_type='E')
 
         # make molecules dataset (molecule information) for output
         self.simulation.addOutputData('molecules')
         # write coords to dataset at every timestep (shape=(n_output_molecules, 7)): seven being [timestep, smol_id(species), mol_state, x, y, z, mol_serial_num]
         self.simulation.addCommand(cmd='listmols2 molecules', cmd_type='E')
 
-        # set molecule ids to none, as they are not available until after the simulation runs
-        self.molecule_ids: List[str] = []
+        # initialize the molecule ids based on the species names. We need this value to properly emit the schema, which expects a single value from this to be a str(int)
+        # the format for molecule_ids is expected to be: 'speciesId_moleculeNumber'
+        self.molecule_ids: List[str] = [str(uuid4()) for n in list(range(len(self.species_names)))]
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
@@ -171,7 +179,7 @@ class SmoldynProcess(Process):
 
             Args:
                 species_name:`str`: name of the given molecule.
-                **configuration_parameters:`Dict`: kwargs are as such: 'low', 'high', 'count'
+                **configuration_parameters:`Dict`: kwargs are as such: 'count'
                 kill_mol:`bool`: kills the molecule based on the `name` argument, which effectively
                     removes the molecule from simulation memory.
         """
@@ -179,18 +187,17 @@ class SmoldynProcess(Process):
         if kill_mol:
             self.simulation.runCommand(f'killmol {species_name}')
 
-        high_bounds = configuration_parameters['high'] or self.boundaries['high']
-        low_bounds = configuration_parameters['low'] or self.boundaries['low']
+        # TODO: eventually allow for an expanding boundary ie in the configuration parameters (pymunk?), which is defies the methodology of smoldyn
 
         # redistribute the molecule according to the bounds
         self.simulation.addSolutionMolecules(
             species=species_name,
             number=configuration_parameters['count'],
-            highpos=high_bounds,
-            lowpos=low_bounds
+            highpos=self.boundaries['high'],
+            lowpos=self.boundaries['low']
         )
 
-    def initial_state(self) -> Dict[str, Dict]:
+    def initial_state(self) -> Dict[str, Union[int, Dict]]:
         """Set the initial parameter state of the simulation. This method should return an implementation of
             that which is returned by `self.schema()`.
 
@@ -214,25 +221,13 @@ class SmoldynProcess(Process):
             'molecules': {}
         }
 
-    def schema(self) -> Dict:
+    def schema(self) -> Dict[str, Union[Dict[str, str], Dict[str, Dict[str, str]]]]:
         """Return a dictionary of molecule names and the expected input/output schema at simulation
             runtime. NOTE: Smoldyn assumes a global high and low bounds and thus high and low
             are specified alongside molecules.
 
             PLEASE NOTE: the key 'counts' refers to the count of molecules for each molecular species. The number of
                 species_types in this regard does not change, even if that number drops to 0.
-        """
-        """
-               { 
-                   'species_counts': {
-                       spec_id: int
-                   }
-
-                   'molecules': {
-                      molId--> molid from listmols2[-1] aka serial number : {
-                         coords: list[float] --> listmols2[3:5]
-                         species_id: string (red or green)--> species id from listmols2[1],
-                         state: string --> state id from listmols2[2]
         """
         counts_type = {
             species_name: 'int'
@@ -248,9 +243,11 @@ class SmoldynProcess(Process):
         }
 
         # TODO: include velocity and state to this schema (add to constructor as well)
+
+        # return a generic tree of string for molecules
         return {
             'species_counts': counts_type,
-            'molecules': molecules_type
+            'molecules': 'tree[string]'  #molecules_type
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -275,7 +272,7 @@ class SmoldynProcess(Process):
         for name in self.species_names:
             self.set_uniform(
                 species_name=name,
-                count=state['species_counts'][name]
+                count=state['species_counts'][name],
             )
 
         # run the simulation for a given interval
@@ -285,12 +282,12 @@ class SmoldynProcess(Process):
         )
 
         # get the counts data, clear the buffer
-        # counts_data = self.simulation.getOutputData('species_counts')
+        counts_data = self.simulation.getOutputData('species_counts')
 
         # get the final counts for the update
-        # final_count = counts_data[-1]
+        final_count = counts_data[-1]
         # remove the timestep from the list
-        # final_count.pop(0)
+        final_count.pop(0)
 
         # get the data based on the commands added in the constructor, clear the buffer
         molecules_data = self.simulation.getOutputData('molecules')
@@ -303,19 +300,23 @@ class SmoldynProcess(Process):
 
         # get and populate the species counts
         for index, name in enumerate(self.species_names):
-            simulation_state['species_counts'][name] = self.simulation.getMoleculeCount(name, MolecState.all) - state['species_counts'][name] #int(final_count[index]) - state['species_counts'][name]
+            simulation_state['species_counts'][name] = int(final_count[index]) - state['species_counts'][name]
 
-        # update the list of known molecule ids (convert to an intstring)
+        # clear the list of known molecule ids and update the list of known molecule ids (convert to an intstring)
+        self.molecule_ids.clear()
         for molecule in molecules_data:
-            self.molecule_ids.append(str(int(molecule[1])))
+            self.molecule_ids.append(str(uuid4()))
 
         # get and populate the output molecules
+        mols = []
         for index, mol_id in enumerate(self.molecule_ids):
             single_molecule_data = molecules_data[index]
+            single_molecule_species_index = int(single_molecule_data[1]) - 1
+            mols.append(single_molecule_species_index)
             simulation_state['molecules'][mol_id] = {
                 'coordinates': single_molecule_data[3:6],
-                'species_id': str(single_molecule_data[1]),
-                'state': str(single_molecule_data[2])
+                'species_id': self.species_names[single_molecule_species_index],
+                'state': str(int(single_molecule_data[2]))
             }
 
         # TODO -- post processing to get effective rates
@@ -324,7 +325,7 @@ class SmoldynProcess(Process):
 
 
 # register the process above as the name passed in the first argument below
-process_registry.register('smoldyn', SmoldynProcess)
+process_registry.register('smoldyn_process', SmoldynProcess)
 
 
 def test_process():
@@ -334,9 +335,9 @@ def test_process():
     instance = {
         'smoldyn': {
             '_type': 'process',
-            'address': 'local:smoldyn',
+            'address': 'local:smoldyn_process',
             'config': {
-                'model_filepath': 'smoldyn_process/models/model_files/crowding_model.txt',
+                'model_filepath': 'smoldyn_process/models/model_files/minE_model.txt',
                 'animate': False,
             },
             'wires': {  # this should return that which is in the schema
@@ -350,8 +351,12 @@ def test_process():
             'config': {
                 'ports': {
                     'inputs': {
-                        'species_counts': 'tree',
-                        'molecules': 'tree'
+                        'species_counts': 'tree[any]',
+                        'molecules': 'tree[any]'
+                    },
+                    'outputs': {
+                        'species_counts': 'tree[any]',
+                        'molecules': 'tree[any]'
                     },
                 }
             },
@@ -370,12 +375,51 @@ def test_process():
     })
 
     # run
-    workflow.run(10)
+    workflow.run(2)
 
     # gather results
     results = workflow.gather_results()
     print(f'RESULTS: {pf(results)}')
 
 
+def manually_test_process():
+    config = {
+        'model_filepath': 'smoldyn_process/models/model_files/minE_model.txt',
+        'animate': False
+    }
+    process = SmoldynProcess(config)
+    initial_state = process.initial_state()
+
+    stop = 1
+
+    result = run(stop, initial_state, process)
+    write_results(result, 'manual_results.json')
+    print(f'Initial State: {initial_state}')
+    print(f'molecule: {process.molecule_ids}')
+
+
+def run(stop, initial_state, process):
+    runs = []
+    for t, _ in enumerate(list(range(stop)), 1):
+        result = process.update(initial_state, t)
+        runs.append(result)
+        if t == stop:
+            return result
+            # return runs
+
+
+def write_results(result, fn: str):
+    import json
+    results_path = os.path.join(os.getcwd(), fn)
+    if not os.path.exists(results_path):
+        with open(results_path, 'w') as f:
+            print('json is dumping')
+            json.dump(result, f, indent=4)
+            print('json dumped')
+
+
 if __name__ == '__main__':
     test_process()
+    #manually_test_process()
+
+
