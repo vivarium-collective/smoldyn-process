@@ -226,7 +226,7 @@ class SmoldynProcess(Process):
 
         return {
             'species_counts': initial_species_counts,
-            'molecules': initial_molecules
+            'molecules': {} #initial_molecules
         }
 
     def schema(self) -> Dict[str, Union[Dict[str, str], Dict[str, Dict[str, str]]]]:
@@ -252,8 +252,8 @@ class SmoldynProcess(Process):
 
         # TODO: include velocity and state to this schema (add to constructor as well)
         return {
-            'species_counts': 'tree[any]',  #counts_type,
-            'molecules': 'tree[any]'  #molecules_type
+            'species_counts': counts_type,  #counts_type,
+            'molecules': 'tree[string]'  #molecules_type
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -420,7 +420,7 @@ def manually_test_process():
 
 
 if __name__ == '__main__':
-    #test_process()
+    test_process()
     manually_test_process()
 
 
