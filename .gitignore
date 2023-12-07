@@ -4,3 +4,4 @@
 *__pycache__/
 _TEST.py
 *.pytest_cache
+results.json
