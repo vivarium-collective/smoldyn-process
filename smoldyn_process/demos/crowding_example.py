@@ -245,7 +245,7 @@ class SmoldynProcess(Process):
         molecules_type = {
             mol_id: {
                 'coordinates': 'list[float]',
-                'species_id': 'string',
+                'species_id': 'int',
                 'state': 'string'
             } for mol_id in self.molecule_ids
         }
@@ -314,13 +314,18 @@ class SmoldynProcess(Process):
             self.molecule_ids.append(str(uuid4()))
 
         # get and populate the output molecules
+        mols = []
         for index, mol_id in enumerate(self.molecule_ids):
             single_molecule_data = molecules_data[index]
+            single_molecule_species_index = int(single_molecule_data[1]) - 1
+            print(single_molecule_species_index)
+            mols.append(single_molecule_species_index)
             simulation_state['molecules'][mol_id] = {
                 'coordinates': single_molecule_data[3:6],
-                'species_id': str(single_molecule_data[1]),
+                'species_id': self.species_names[single_molecule_species_index],
                 'state': str(int(single_molecule_data[2]))
             }
+        print(f'mols: {set(mols)}')
 
         # TODO -- post processing to get effective rates
 
