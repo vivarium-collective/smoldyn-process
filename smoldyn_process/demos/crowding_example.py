@@ -49,6 +49,7 @@
 """
 import os
 from typing import *
+from uuid import uuid4
 import numpy as np
 import smoldyn as sm
 from smoldyn._smoldyn import MolecState
@@ -153,7 +154,7 @@ class SmoldynProcess(Process):
 
         # initialize the molecule ids based on the species names. We need this value to properly emit the schema, which expects a single value from this to be a str(int)
         # the format for molecule_ids is expected to be: 'speciesId_moleculeNumber'
-        self.molecule_ids: List[str] = [f'{str(n)}_{str(i)}' for i, n in enumerate(list(range(len(self.species_names))))]
+        self.molecule_ids: List[str] = [str(uuid4()) for n in list(range(len(self.species_names)))]
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
@@ -243,7 +244,7 @@ class SmoldynProcess(Process):
 
         molecules_type = {
             mol_id: {
-                'coordinates': 'list',
+                'coordinates': 'list[float]',
                 'species_id': 'string',
                 'state': 'string'
             } for mol_id in self.molecule_ids
@@ -251,8 +252,8 @@ class SmoldynProcess(Process):
 
         # TODO: include velocity and state to this schema (add to constructor as well)
         return {
-            'species_counts': counts_type,
-            'molecules': 'tree[any]'#molecules_type
+            'species_counts': 'tree[any]',  #counts_type,
+            'molecules': 'tree[any]'  #molecules_type
         }
 
     def update(self, state: Dict, interval: int) -> Dict:
@@ -310,12 +311,12 @@ class SmoldynProcess(Process):
         # clear the list of known molecule ids and update the list of known molecule ids (convert to an intstring)
         self.molecule_ids.clear()
         for molecule in molecules_data:
-            self.molecule_ids.append(str(int(molecule[1])))
+            self.molecule_ids.append(str(uuid4()))
 
         # get and populate the output molecules
         for index, mol_id in enumerate(self.molecule_ids):
             single_molecule_data = molecules_data[index]
-            simulation_state['molecules'][f'{mol_id}_{str(index)}'] = {
+            simulation_state['molecules'][mol_id] = {
                 'coordinates': single_molecule_data[3:6],
                 'species_id': str(single_molecule_data[1]),
                 'state': str(int(single_molecule_data[2]))
@@ -415,9 +416,11 @@ def manually_test_process():
     result = run(stop)
     write_results()
     print(f'Initial State: {initial_state}')
+    print(f'molecule: {process.molecule_ids}')
 
 
 if __name__ == '__main__':
-    test_process()
+    #test_process()
+    manually_test_process()
 
 
