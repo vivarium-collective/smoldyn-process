@@ -41,14 +41,13 @@
             sim.connect(new_dif, update_difc, step=10, args=[1,1])
 
             # ...or species as target:
-            sim.connect(func = new_dif, target = ’a.difc’, step=10, args=[0, 1])
+            sim.connect(func = new_dif, target = 'a.difc', step=10, args=[0, 1])
 
             sim.run(....
 
 
 """
-
-
+import os
 from typing import *
 import numpy as np
 import smoldyn as sm
@@ -311,7 +310,7 @@ class SmoldynProcess(Process):
             simulation_state['molecules'][f'{mol_id}_{str(index)}'] = {
                 'coordinates': single_molecule_data[3:6],
                 'species_id': str(single_molecule_data[1]),
-                'state': str(single_molecule_data[2])
+                'state': str(int(single_molecule_data[2]))
             }
 
         # TODO -- post processing to get effective rates
@@ -388,10 +387,15 @@ if __name__ == '__main__':
             result = process.update(initial_state, t)
             runs.append(result)
             if t == stop:
-                return runs
+                return result
+                # return runs
 
     stop = 1
 
     result = run(stop)
 
-    print(result[-1])
+    import json
+    print('json is dumping')
+    with open(os.path.join(os.getcwd(), 'results.json'), 'w') as f:
+        json.dump(result, f, indent=4)
+    print('json dumped')
