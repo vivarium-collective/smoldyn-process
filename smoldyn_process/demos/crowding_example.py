@@ -153,7 +153,8 @@ class SmoldynProcess(Process):
         self.simulation.addCommand(cmd='listmols2 molecules', cmd_type='E')
 
         # initialize the molecule ids based on the species names. We need this value to properly emit the schema, which expects a single value from this to be a str(int)
-        self.molecule_ids: List[str] = ['mol_' + str(n) for n in range(len(self.species_names))]
+        # the format for molecule_ids is expected to be: 'speciesId_moleculeNumber'
+        self.molecule_ids: List[str] = [f'{str(n)}_{str(i)}' for i, n in enumerate(list(range(len(self.species_names))))]
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
@@ -302,12 +303,12 @@ class SmoldynProcess(Process):
         # clear the list of known molecule ids and update the list of known molecule ids (convert to an intstring)
         self.molecule_ids.clear()
         for molecule in molecules_data:
-            self.molecule_ids.append('mol_' + str(int(molecule[1])))
+            self.molecule_ids.append(str(int(molecule[1])))
 
         # get and populate the output molecules
         for index, mol_id in enumerate(self.molecule_ids):
             single_molecule_data = molecules_data[index]
-            simulation_state['molecules'][mol_id] = {
+            simulation_state['molecules'][f'{mol_id}_{str(index)}'] = {
                 'coordinates': single_molecule_data[3:6],
                 'species_id': str(single_molecule_data[1]),
                 'state': str(single_molecule_data[2])
@@ -393,5 +394,4 @@ if __name__ == '__main__':
 
     result = run(stop)
 
-    print(result)
-    print(list(set(process.molecule_ids)))
+    print(result[-1])
