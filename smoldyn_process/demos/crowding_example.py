@@ -145,8 +145,8 @@ class SmoldynProcess(Process):
         # write coords to dataset at every timestep (shape=(n_output_molecules, 7)): seven being [timestep, smol_id(species), mol_state, x, y, z, mol_serial_num]
         self.simulation.addCommand(cmd='listmols2 molecules', cmd_type='E')
 
-        # set molecule ids to none, as they are not available until after the simulation runs
-        self.molecule_ids: List[str] = []
+        # initialize the molecule ids based on the species names. We need this value to properly emit the schema, which expects a single value from this to be a str(int)
+        self.molecule_ids: List[str] = [str(n) for n in range(len(self.species_names))]
 
         # get the simulation boundaries, which in the case of Smoldyn denote the physical boundaries
         # TODO: add a verification method to ensure that the boundaries do not change on the next step...
