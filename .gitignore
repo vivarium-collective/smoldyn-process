@@ -5,3 +5,4 @@
 _TEST.py
 *.pytest_cache
 results.json
+*.DS_Store
