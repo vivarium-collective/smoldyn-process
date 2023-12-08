@@ -375,7 +375,7 @@ def test_process():
     })
 
     # run
-    workflow.run(2)
+    workflow.run(1)
 
     # gather results
     results = workflow.gather_results()
@@ -392,17 +392,18 @@ def manually_test_process():
 
     stop = 1
 
-    result = run(stop, initial_state, process)
+    result = run(stop, process)
     write_results(result, 'manual_results.json')
-    print(f'Initial State: {initial_state}')
-    print(f'molecule: {process.molecule_ids}')
 
 
-def run(stop, initial_state, process):
+def run(stop, process: SmoldynProcess):
+    current_state = process.initial_state()
     runs = []
     for t, _ in enumerate(list(range(stop)), 1):
-        result = process.update(initial_state, t)
+        result = process.update(current_state, t)
         runs.append(result)
+        for species_id, delta in result['species_counts'].items():
+            current_state['species_counts'][species_id] += delta
         if t == stop:
             return result
             # return runs
