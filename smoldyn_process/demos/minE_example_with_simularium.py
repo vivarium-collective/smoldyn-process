@@ -67,6 +67,7 @@ from simulariumio import (
 import smoldyn as sm
 from smoldyn._smoldyn import MolecState
 from process_bigraph import Process, Composite, process_registry#, pf, pp
+from smoldyn_process.utils.simularium_utils import generate_new_simularium_file
 
 
 class SmoldynProcess(Process):
@@ -328,7 +329,7 @@ class SmoldynProcess(Process):
             .replace(' ', '').replace(':', '').replace('.', '')
         simularium_fp = os.path.join(simularium_file_dir, interval_simularium_filename)
 
-        generate_simularium_file(
+        generate_new_simularium_file(
             molecule_ids=self.molecule_ids,
             molecule_coordinates=all_molecule_coordinates,
             total_steps=int(interval),
