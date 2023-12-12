@@ -66,7 +66,7 @@ from simulariumio import (
 )
 import smoldyn as sm
 from smoldyn._smoldyn import MolecState
-from process_bigraph import Process, Composite, process_registry, pf, pp
+from process_bigraph import Process, Composite, process_registry#, pf, pp
 
 
 class SmoldynProcess(Process):
@@ -343,71 +343,7 @@ class SmoldynProcess(Process):
 process_registry.register('smoldyn_process', SmoldynProcess)
 
 
-def generate_simularium_file(
-        molecule_ids: List[str],
-        molecule_coordinates: List[List[float]],
-        total_steps: int,
-        timestep: float,
-        file_save_name: str,
-        box_size: int = 100,
-) -> None:
-    n_agents = len(molecule_ids)
-    type_names = []
-    for t in range(total_steps):
-        type_names.append([mol_id for mol_id in molecule_ids])
-
-    all_radii = []
-    for t in range(total_steps):
-        all_radii.append([0.01 for n in molecule_ids])
-
-    all_display_data = {
-        mol_id: DisplayData(
-            name=mol_id,
-            display_type=DISPLAY_TYPE.SPHERE,
-        ) for mol_id in molecule_ids
-    }
-
-    simulation_trajectory = TrajectoryData(
-        meta_data=MetaData(
-            box_size=np.array([box_size, box_size, box_size]),
-            camera_defaults=CameraData(
-                position=np.array([10.0, 0.0, 200.0]),
-                look_at_position=np.array([10.0, 0.0, 0.0]),
-                fov_degrees=60.0,
-            ),
-            trajectory_title="Smoldyn Process",
-            model_meta_data=ModelMetaData(
-                title="Some agent-based model",
-                version="8.1",
-                authors="A Modeler",
-                description=(
-                    "An agent-based model run with some parameter set"
-                ),
-                doi="10.1016/j.bpj.2016.02.002",
-                source_code_url="https://github.com/simularium/simulariumio",
-                source_code_license_url="https://github.com/simularium/simulariumio/blob/main/LICENSE",
-                input_data_url="https://allencell.org/path/to/native/engine/input/files",
-                raw_output_data_url="https://allencell.org/path/to/native/engine/output/files",
-            ),
-        ),
-        agent_data=AgentData(
-            times=timestep * np.array(list(range(total_steps))),
-            n_agents=np.array(total_steps * [n_agents]),
-            viz_types=np.array(total_steps * [n_agents * [1000.0]]),  # default viz type = 1000
-            unique_ids=np.array(total_steps * [list(range(n_agents))]),
-            types=type_names,
-            positions=np.array(molecule_coordinates),
-            radii=all_radii,
-            display_data=all_display_data
-        ),
-        time_units=UnitData("ns"),  # nanoseconds
-        spatial_units=UnitData("nm"),  # nanometers
-    )
-
-    TrajectoryConverter(simulation_trajectory).save(file_save_name)
-
-
-def test_process():
+def test_process(total_time: int):
     """Test the smoldyn process using the crowding model."""
 
     # this is the instance for the composite process to run
@@ -416,7 +352,7 @@ def test_process():
             '_type': 'process',
             'address': 'local:smoldyn_process',
             'config': {
-                'model_filepath': 'process_bigraph/experiments/model_files/minE_model.txt',
+                'model_filepath': 'smoldyn_process/models/model_files/minE_model.txt',
                 'animate': False,
             },
             'wires': {  # this should return that which is in the schema
@@ -454,16 +390,17 @@ def test_process():
     })
 
     # run
-    workflow.run(1)
+    workflow.run(total_time)
 
     # gather results
     results = workflow.gather_results()
-    print(f'RESULTS: {pf(results)}')
+    print(results)
+    #print(f'RESULTS: {pf(results)}')
 
 
 def manually_test_process():
     config = {
-        'model_filepath': 'process_bigraph/experiments/model_files/minE_model.txt',
+        'model_filepath': 'smoldyn_process/models/model_files/minE_model.txt',
         'animate': False
     }
     process = SmoldynProcess(config)
@@ -488,7 +425,7 @@ def test_smoldyn_manually(stop_time: int, process: SmoldynProcess, historical: b
 
 
 if __name__ == '__main__':
-     test_process()
-     #test_smoldyn_manually()
+    test_process(1)
+    #test_smoldyn_manually()
 
 
