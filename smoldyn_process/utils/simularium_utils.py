@@ -121,6 +121,29 @@ def generate_simularium_file_from_trajectory(converter: TrajectoryConverter, fil
 
 
 def generate_new_simularium_file(**params):
+    """Generate a new simularium file for a simulation.
+
+        Kwargs:
+            params = {
+                'simulation_data': {
+                    molecule_ids: List[str],
+                    molecule_coordinates: List[List[float]],
+                    total_steps: int,
+                    timestep: float,
+                    file_save_name: str,
+                    box_size: int = 100,
+                },
+                'plot_config': {
+                    'total_time': interval (from update()),
+                    'counts:': {
+                        spec_id: spec_count,
+                        for spec_id in self.species_names
+                    },
+                },
+                'file_name': simularium save fp
+            }
+
+    """
     trajectory = generate_simularium_trajectory(**params['simulation_data'])
     converter = generate_trajectory_converter(trajectory)
     plot_config = {
