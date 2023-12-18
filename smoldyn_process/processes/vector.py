@@ -1,3 +1,7 @@
+from math import sqrt
+from abc import ABC, abstractmethod
+
+
 class Position:
     def __init__(self, x, y):
         self.x = x
@@ -31,4 +35,59 @@ class Agent:
 
     def change_position(self, *new_coords: tuple):
         return self.position.set_coords(*new_coords)
+
+
+
+class Vector(ABC):
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def length(self):
+        pass
+
+    @abstractmethod
+    def represent(self):
+        pass
+
+
+class Vector2d(Vector):
+    def __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+
+    def length(self):
+        return sqrt(self.x**2 + self.y**2)
+
+
+class Vector3d(Vector):
+    def __init__(self, x, y, z):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def length(self):
+        return sqrt(self.x**2 + self.y**2 + self.z**2)
+
+    def represent(self):
+        return [self.x, self.y, self.z]
+
+
+
+
+v0 = Vector3d(3, 4, 7)
+print(v0.length())
+
+
+
+
+
+
+
+
+
+
+
 
