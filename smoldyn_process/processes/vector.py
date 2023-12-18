@@ -51,6 +51,18 @@ class Vector(ABC):
         pass
 
 
+class Vector1d(Vector):
+    def __init__(self, val):
+        super().__init__()
+        self.val = val
+
+    def length(self):
+        return abs(self.val)
+
+    def represent(self):
+        return [self.val]
+    
+
 class Vector2d(Vector):
     def __init__(self, x, y):
         super().__init__()
